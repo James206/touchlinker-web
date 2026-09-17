@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nene — Garden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0a0c16;
+    --glass:#11142a;
+    --glass-2:#161a36;
+    --ink:#eae6da;
+    --muted:#8891b8;
+    --faint:#565f8c;
+    --amber:#f2a65a;
+    --amber-glow:rgba(242,166,90,.35);
+    --teal:#45c7b8;
+    --teal-glow:rgba(69,199,184,.32);
+    --line:rgba(233,230,218,.08);
+    --dull:#3a4066;
+  }
+  *{box-sizing:border-box; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
+  html,body{height:100%; margin:0;}
+  body{
+    min-height:100%;
+    background:
+      radial-gradient(ellipse 900px 600px at 50% 0%, #171d3d 0%, var(--void) 55%),
+      var(--void);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:28px 16px 20px;
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--ink);
+  }
+  .eyebrow{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin-bottom:4px;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:22px;
+    margin:0 0 20px;
+  }
+
+  .top-row{
+    width:100%;
+    max-width:420px;
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .icon-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:6px 12px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .icon-btn:hover{ color:var(--ink); border-color:var(--muted); }
+  .icon-btn.active{ color:var(--teal); border-color:var(--teal-glow); }
+
+  .garden-frame{
+    width:100%;
+    max-width:420px;
+    background:linear-gradient(180deg, var(--glass), var(--glass-2));
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:8px;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,.6);
+  }
+  #gardenSvg{ width:100%; height:auto; display:block; }
+
+  .hint{
+    font-size:11px;
+    color:var(--faint);
+    text-align:center;
+    margin:14px 0 18px;
+    line-height:1.6;
+    max-width:340px;
+  }
+
+  .fingers{
+    display:flex; gap:8px; justify-content:center;
+    width:100%; max-width:420px;
+  }
+  .finger{
+    flex:1;
+    aspect-ratio:1;
+    max-width:96px;
+    min-height:76px;
+    border-radius:16px;
+    background:var(--glass-2);
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:20px; font-weight:700;
+    color:var(--muted);
+    transition:all .08s ease;
+    touch-action:none;
+  }
+  .finger.active{
+    border-color:var(--teal);
+    color:var(--ink);
+    box-shadow:0 0 0 3px var(--teal-glow);
+  }
+
+  .overlay{
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(10,12,22,.88);
+    text-align:center; padding:28px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px; color:var(--muted);
+    cursor:pointer;
+    z-index:10;
+  }
+  .overlay b{ color:var(--ink); }
+</style>
+</head>
+<body>
+
+  <div class="eyebrow">Touchlinker · Prototype</div>
+  <h1>Nene — Garden</h1>
+
+  <div class="top-row">
+    <button id="muteBtn" class="icon-btn">Sound: off</button>
+    <button id="resetBtn" class="icon-btn">Reset</button>
+  </div>
+
+  <div class="garden-frame">
+    <svg id="gardenSvg" viewBox="0 0 400 460" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <p class="hint">Type anything, any way you like. Steady, confident rhythm grows the garden richer. Hesitation and corrections prune it back. There's no score — just watch what your own rhythm makes.</p>
+
+  <div class="fingers">
+    <div class="finger" id="f1">V</div>
+    <div class="finger" id="f2">B</div>
+    <div class="finger" id="f3">N</div>
+    <div class="finger" id="f4">M</div>
+  </div>
+
+  <div class="overlay" id="overlay">Tap here, then rest your right hand's four fingers on <b>V&nbsp;B&nbsp;N&nbsp;M</b></div>
+
+<script>
+(function(){
+  // ── Decode core — same engine as try-it-mobile.html, trimmed to the
+  // alphabet plus space/backspace. No digit mode, Alt, or period in this
+  // prototype — this is about the growth mechanic, not a full typing tool.
+  const TAP_MAX = 0.25;
+  const FINGER_KEYS = { v:1, a:1, b:2, n:3, c:3, m:4, d:4 };
+
+  const ENCODING_MAP = {
+    A:{fingers:[1],mode:'tap'}, B:{fingers:[2],mode:'tap'}, C:{fingers:[3],mode:'tap'}, D:{fingers:[4],mode:'tap'},
+    E:{fingers:[1,2],mode:'tap'}, F:{fingers:[1,3],mode:'tap'}, G:{fingers:[1,4],mode:'tap'},
+    H:{fingers:[2,3],mode:'tap'}, I:{fingers:[2,4],mode:'tap'}, J:{fingers:[3,4],mode:'tap'},
+    K:{fingers:[1],mode:'touch'}, L:{fingers:[2],mode:'touch'}, M:{fingers:[3],mode:'touch'}, N:{fingers:[4],mode:'touch'},
+    O:{fingers:[1,2],mode:'touch'}, P:{fingers:[1,3],mode:'touch'}, Q:{fingers:[1,4],mode:'touch'},
+    R:{fingers:[2,3],mode:'touch'}, S:{fingers:[2,4],mode:'touch'}, T:{fingers:[3,4],mode:'touch'},
+    U:{ground:2,visitor:1,mode:'compound'}, V:{ground:3,visitor:1,mode:'compound'}, W:{ground:4,visitor:1,mode:'compound'},
+    X:{ground:3,visitor:2,mode:'compound'}, Y:{ground:4,visitor:2,mode:'compound'}, Z:{ground:4,visitor:3,mode:'compound'},
+    ' ':{ground:1,visitor:2,mode:'compound'}, '\b':{ground:1,visitor:3,mode:'compound'},
+  };
+  const fkey = (arr) => [...arr].sort((a,b)=>a-b).join(',');
+
+  const state = { pressTimes:{}, backTapDetected:{}, pendingChord:{} };
+
+  function findCharacter(fingers, mode){
+    const f = fkey(fingers);
+    for(const [char,p] of Object.entries(ENCODING_MAP)){
+      if(p.mode===mode && p.fingers && fkey(p.fingers)===f) return char;
+    }
+    return null;
+  }
+  function findCompound(ground, visitor){
+    for(const [char,p] of Object.entries(ENCODING_MAP)){
+      if(p.mode==='compound' && p.ground===ground && p.visitor===visitor) return char;
+    }
+    return null;
+  }
+
+  function onPress(k, now){
+    if(!(k in FINGER_KEYS)) return;
+    if(k in state.pressTimes) return;
+    state.pressTimes[k] = now;
+    setFingerVisual(FINGER_KEYS[k], true);
+    for(const [heldKey, heldTime] of Object.entries(state.pressTimes)){
+      if(heldKey===k) continue;
+      const held = now - heldTime;
+      if(0.05 < held && held < 0.375){ state.backTapDetected[k]=FINGER_KEYS[heldKey]; break; }
+    }
+  }
+
+  function resolveRelease(k, now){
+    if(!(k in FINGER_KEYS)) return;
+    if(!(k in state.pressTimes)){ return; }
+    const holdDuration = now - state.pressTimes[k];
+    delete state.pressTimes[k];
+
+    if(k in state.backTapDetected){
+      const groundFinger = state.backTapDetected[k];
+      delete state.backTapDetected[k];
+      const visitorFinger = FINGER_KEYS[k];
+      const char = findCompound(groundFinger, visitorFinger);
+      state.pendingChord = {};
+      Object.entries(FINGER_KEYS).filter(([,f])=>f===groundFinger).forEach(([gk])=>delete state.pressTimes[gk]);
+      if(char) onCharacter(char, holdDuration, true);
+      return;
+    }
+
+    state.pendingChord[k] = { finger: FINGER_KEYS[k], duration: holdDuration };
+    const stillHeld = Object.keys(state.pressTimes).some(hk => hk in FINGER_KEYS);
+    if(stillHeld) return;
+
+    const fingers = [...new Set(Object.values(state.pendingChord).map(v=>v.finger))].sort((a,b)=>a-b);
+    const durations = Object.values(state.pendingChord).map(v=>v.duration);
+    const avg = durations.reduce((a,b)=>a+b,0)/durations.length;
+    state.pendingChord = {};
+    const mode = avg < TAP_MAX ? 'tap' : 'touch';
+    const char = findCharacter(fingers, mode);
+    // Distance from the tap/touch boundary is a confidence signal — a chord
+    // held right at 0.25s was ambiguous even if it resolved correctly.
+    const boundaryDistance = Math.min(1, Math.abs(avg - TAP_MAX) / TAP_MAX);
+    if(char) onCharacter(char, boundaryDistance, false);
+  }
+
+  function onRelease(k, now){
+    setFingerVisual(FINGER_KEYS[k], false);
+    setTimeout(() => resolveRelease(k, now), 40);
+  }
+
+  // ── Rhythm → flow score ─────────────────────────────────────────
+  // Two signals combine into a 0–1 flow score per character: how evenly
+  // spaced this character was relative to recent ones (steady cadence),
+  // and how confidently the chord was held (not hovering at the tap/touch
+  // boundary). Neither signal alone is "correctness" — both are about
+  // whether the input felt sure of itself.
+  let lastCharTime = null;
+  let gapHistory = [];
+  let vibrancy = 0.5; // slow-moving session average, drives overall color trend
+
+  function computeFlowScore(confidenceSignal){
+    const now = performance.now()/1000;
+    let gapScore = 0.6; // neutral default until we have history
+    if(lastCharTime !== null){
+      const gap = now - lastCharTime;
+      gapHistory.push(gap);
+      if(gapHistory.length > 8) gapHistory.shift();
+      if(gapHistory.length >= 3){
+        const mean = gapHistory.reduce((a,b)=>a+b,0)/gapHistory.length;
+        const variance = gapHistory.reduce((a,b)=>a+(b-mean)*(b-mean),0)/gapHistory.length;
+        const cv = mean > 0 ? Math.sqrt(variance)/mean : 1;
+        gapScore = Math.max(0, Math.min(1, 1 - cv));
+      }
+    }
+    lastCharTime = now;
+    const score = Math.max(0, Math.min(1, gapScore*0.6 + confidenceSignal*0.4));
+    vibrancy = vibrancy*0.85 + score*0.15;
+    return score;
+  }
+
+  // ── Garden growth ───────────────────────────────────────────────
+  const svg = document.getElementById('gardenSvg');
+  const NS = 'http://www.w3.org/2000/svg';
+  const CANVAS_W = 400, CANVAS_H = 460, EDGE_MARGIN = 45, CENTER = {x:200,y:230};
+  let branches = [{ x:200, y:452, angle:0 }]; // every entry is an independently growable tip
+  let elements = []; // {el, kind} in creation order, for pruning
+
+  function colorFor(score){
+    // Low score: dull slate. High score: blend toward teal, with occasional
+    // amber warmth at real peaks — reusing the existing Touchlinker palette
+    // rather than inventing a separate one.
+    const t = Math.max(0, Math.min(1, score*0.6 + vibrancy*0.4));
+    const dull = [58,64,102], teal = [69,199,184], amber = [242,166,90];
+    const base = t > 0.85 ? amber : teal;
+    const r = Math.round(dull[0] + (base[0]-dull[0])*t);
+    const g = Math.round(dull[1] + (base[1]-dull[1])*t);
+    const b = Math.round(dull[2] + (base[2]-dull[2])*t);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // Angle 0 = straight up, 90 = right, 180 = down, -90 = left (matches the
+  // sin/cos convention growFrom already uses below).
+  function angleToward(from, to){
+    return Math.atan2(to.x-from.x, -(to.y-from.y)) * 180/Math.PI;
+  }
+  function blendAngle(a, b, t){
+    const diff = ((b-a+540)%360)-180; // shortest signed path between the two angles
+    return a + diff*t;
+  }
+  // As a tip nears any edge, its growth angle bends back toward center —
+  // this is what keeps the garden contained in the frame indefinitely
+  // instead of growing off the top of the visible area.
+  function steeredAngle(tip, desiredAngle){
+    const nearest = Math.min(tip.y, CANVAS_H-tip.y, tip.x, CANVAS_W-tip.x);
+    if(nearest >= EDGE_MARGIN) return desiredAngle;
+    const pull = Math.min(1, (EDGE_MARGIN-nearest)/EDGE_MARGIN);
+    return blendAngle(desiredAngle, angleToward(tip, CENTER), pull);
+  }
+
+  function growFrom(tip, score){
+    const jitter = (1 - score) * 34; // steadier rhythm = straighter growth
+    const desiredAngle = tip.angle + (Math.random()*2-1) * jitter;
+    const newAngle = steeredAngle(tip, desiredAngle);
+    const len = 9 + score*11;
+    const rad = newAngle * Math.PI/180;
+    const nx = tip.x + Math.sin(rad)*len;
+    const ny = tip.y - Math.cos(rad)*len;
+
+    const line = document.createElementNS(NS,'line');
+    line.setAttribute('x1', tip.x); line.setAttribute('y1', tip.y);
+    line.setAttribute('x2', nx); line.setAttribute('y2', ny);
+    line.setAttribute('stroke', colorFor(score));
+    line.setAttribute('stroke-width', 1.4 + score*2.2);
+    line.setAttribute('stroke-linecap', 'round');
+    line.style.opacity = 0;
+    line.style.transition = 'opacity .5s ease';
+    svg.appendChild(line);
+    requestAnimationFrame(()=>{ line.style.opacity = 1; });
+    elements.push({ el: line, kind:'branch' });
+
+    // Rare bloom at real high points — the one moment of pure delight,
+    // not a reward for every keystroke.
+    if(score > 0.88 && Math.random() < 0.35){
+      const bloom = document.createElementNS(NS,'circle');
+      bloom.setAttribute('cx', nx); bloom.setAttribute('cy', ny);
+      bloom.setAttribute('r', 0);
+      bloom.setAttribute('fill', 'var(--amber)');
+      bloom.style.transition = 'r .4s ease';
+      svg.appendChild(bloom);
+      requestAnimationFrame(()=>{ bloom.setAttribute('r', 3.2); });
+      elements.push({ el: bloom, kind:'bloom' });
+    }
+    return { x:nx, y:ny, angle:newAngle };
+  }
+
+  let lastGrowth = null; // {idx, prevTip} — lets a prune properly rewind tip position, not just the visual line
+
+  function spawnGrowth(score){
+    // Mostly extend the most recently grown tip (keeps a coherent main
+    // vine, which is what read well already) but sometimes pick an older
+    // tip instead — otherwise every earlier branch freezes forever the
+    // moment a newer one is created, which is what produced a single
+    // ever-extending line rather than a garden with real structure.
+    const idx = (branches.length===1 || Math.random() < 0.65)
+      ? branches.length-1
+      : Math.floor(Math.random()*branches.length);
+    const prevTip = branches[idx];
+    branches[idx] = growFrom(prevTip, score);
+    lastGrowth = { idx, prevTip, forked:false };
+
+    // Sustained good rhythm occasionally forks off a genuinely new,
+    // independent branch — pushed as its own entry so it keeps growing
+    // on future keystrokes instead of being a one-off tangent.
+    if(score > 0.78 && Math.random() < 0.22){
+      const base = branches[idx];
+      const forkAngle = base.angle + (Math.random()<0.5?-1:1) * (18 + Math.random()*14);
+      const forkTip = growFrom({ x:base.x, y:base.y, angle:forkAngle }, score*0.85);
+      branches.push(forkTip);
+      if(branches.length > 24) branches.shift(); // keep it bounded over a long session
+      lastGrowth.forked = true;
+    }
+  }
+
+  function pruneLast(){
+    // Backspace doesn't just undo text — it visibly wilts the garden's
+    // most recent growth, fading it out rather than snapping it away, and
+    // properly rewinds the tip position it grew from (not just the line),
+    // so the next keystroke continues from the real prior point.
+    for(let i = elements.length-1; i>=0; i--){
+      if(elements[i].kind === 'branch' || elements[i].kind === 'bloom'){
+        const { el } = elements[i];
+        el.style.opacity = 0;
+        setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 450);
+        elements.splice(i,1);
+        if(lastGrowth){
+          if(lastGrowth.forked && branches.length > 1) branches.pop();
+          branches[lastGrowth.idx] = lastGrowth.prevTip;
+          lastGrowth = null;
+        }
+        break;
+      }
+    }
+  }
+
+  function resetGarden(){
+    elements.forEach(e => { if(e.el.parentNode) e.el.parentNode.removeChild(e.el); });
+    elements = [];
+    branches = [{ x:200, y:452, angle:0 }];
+    lastGrowth = null;
+    gapHistory = []; lastCharTime = null; vibrancy = 0.5;
+  }
+
+  // ── Audio — generative, non-language, always consonant ────────────
+  // A pentatonic scale can't produce a "wrong" note against itself, so
+  // score modulates brightness/duration/volume rather than picking
+  // "good" vs "bad" pitches — this should never sound punishing.
+  let audioCtx = null;
+  let soundOn = false;
+  const SCALE = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+
+  function ensureAudio(){
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function playTone(score){
+    if(!soundOn) return;
+    ensureAudio();
+    const note = SCALE[Math.floor(Math.random()*SCALE.length)];
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 500 + score*3500;
+    osc.type = 'sine';
+    osc.frequency.value = note;
+    const t = audioCtx.currentTime;
+    const vol = 0.05 + score*0.09;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(vol, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35 + score*0.4);
+    osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + 0.9);
+  }
+
+  function playPrune(){
+    if(!soundOn) return;
+    ensureAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 180;
+    const t = audioCtx.currentTime;
+    gain.gain.setValueAtTime(0.06, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + 0.3);
+  }
+
+  // ── Wire decode output into growth + audio ─────────────────────
+  function onCharacter(char, signal, isCompound){
+    if(char === '\b'){
+      pruneLast();
+      playPrune();
+      return;
+    }
+    // Compound confidence isn't meaningful the same way chord-boundary
+    // distance is, so compounds (space, U–Z) get a flat mid confidence.
+    const confidence = isCompound ? 0.6 : signal;
+    const score = computeFlowScore(confidence);
+    if(char !== ' ') spawnGrowth(score);
+    playTone(score);
+  }
+
+  // ── DOM wiring ──────────────────────────────────────────────────
+  const fingerEls = { 1: document.getElementById('f1'), 2: document.getElementById('f2'), 3: document.getElementById('f3'), 4: document.getElementById('f4') };
+  function setFingerVisual(finger, active){
+    const el = fingerEls[finger];
+    if(el) el.classList.toggle('active', active);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if(!(k in FINGER_KEYS)) return;
+    e.preventDefault();
+    if(e.repeat) return;
+    onPress(k, performance.now()/1000);
+  });
+  document.addEventListener('keyup', (e) => {
+    const k = e.key.toLowerCase();
+    if(!(k in FINGER_KEYS)) return;
+    e.preventDefault();
+    onRelease(k, performance.now()/1000);
+  });
+
+  const keyByFinger = {1:'v',2:'b',3:'n',4:'m'};
+  Object.entries(fingerEls).forEach(([fingerNum, el]) => {
+    const k = keyByFinger[fingerNum];
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); onPress(k, performance.now()/1000); });
+    el.addEventListener('pointerup', (e) => { e.preventDefault(); onRelease(k, performance.now()/1000); });
+    el.addEventListener('pointercancel', (e) => { onRelease(k, performance.now()/1000); });
+  });
+
+  const overlay = document.getElementById('overlay');
+  overlay.addEventListener('click', () => {
+    overlay.style.display = 'none';
+    ensureAudio();
+  });
+
+  const muteBtn = document.getElementById('muteBtn');
+  muteBtn.addEventListener('click', () => {
+    soundOn = !soundOn;
+    muteBtn.textContent = soundOn ? 'Sound: on' : 'Sound: off';
+    muteBtn.classList.toggle('active', soundOn);
+    if(soundOn) ensureAudio();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetGarden);
+})();
+</script>
+</body>
+</html>

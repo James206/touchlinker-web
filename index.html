@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touchlinker&trade; — Language Through Your Fingertips</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@200;300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #1B3A5C;
+            --gold: #E8A020;
+            --gold-light: #F5C060;
+            --white: #FFFFFF;
+            --off-white: #F8F6F2;
+            --gray: #8A9BB0;
+            --dark: #0D1E30;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Josefin Sans', sans-serif;
+            background: var(--off-white);
+            color: var(--navy);
+            overflow-x: hidden;
+        }
+
+        /* NAV */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1.5rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(27, 58, 92, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-logo {
+            font-family: 'Josefin Sans', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 0.25em;
+            color: var(--white);
+            text-decoration: none;
+        }
+
+        .nav-logo span {
+            color: var(--gold);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--gold);
+        }
+
+        /* HERO */
+        .hero {
+            min-height: 100vh;
+            background: var(--navy);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 8rem 4rem 4rem;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(232,160,32,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(232,160,32,0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6rem;
+            align-items: center;
+            width: 100%;
+        }
+
+        .hero-text {
+            animation: fadeUp 1s ease forwards;
+        }
+
+        .hero-eyebrow {
+            font-size: 0.7rem;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 2rem;
+        }
+
+        .hero-headline {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.5rem, 4vw, 3.8rem);
+            font-weight: 300;
+            line-height: 1.3;
+            color: var(--white);
+            margin-bottom: 2rem;
+        }
+
+        .hero-headline em {
+            font-style: italic;
+            color: var(--gold-light);
+        }
+
+        .hero-sub {
+            font-size: 0.85rem;
+            letter-spacing: 0.15em;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.8;
+            margin-bottom: 3rem;
+            max-width: 420px;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 2rem;
+            border: 1px solid rgba(232,160,32,0.4);
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.75rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .hero-cta:hover {
+            background: rgba(232,160,32,0.1);
+            border-color: var(--gold);
+        }
+
+        .hero-cta::after {
+            content: '→';
+        }
+
+        .hero-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            animation: fadeUp 1s ease 0.3s both;
+        }
+
+        .finger-display {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .finger {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .finger-label {
+            font-size: 0.6rem;
+            letter-spacing: 0.2em;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+        }
+
+        .finger-pad {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 1px solid rgba(232,160,32,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .finger-pad.active {
+            background: rgba(232,160,32,0.15);
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(232,160,32,0.2);
+        }
+
+        .finger-pad .pulse {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--gold);
+            opacity: 0;
+        }
+
+        .finger-pad.active .pulse {
+            animation: pulse 1.5s ease infinite;
+        }
+
+        .finger-pad.active-2 .pulse {
+            animation: pulse 1.5s ease 0.2s infinite;
+        }
+
+        .finger-pad.active-3 .pulse {
+            animation: pulse 1.5s ease 0.4s infinite;
+        }
+
+        .hero-word {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            letter-spacing: 0.5em;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+        }
+
+        .patent-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+        }
+
+        .patent-badge::before {
+            content: '◆';
+            color: var(--gold);
+            font-size: 0.5rem;
+        }
+
+        /* WHAT IT IS */
+        .what {
+            padding: 8rem 4rem;
+            background: var(--off-white);
+        }
+
+        .what-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 6rem;
+            align-items: start;
+        }
+
+        .section-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--gold);
+            padding-top: 0.5rem;
+        }
+
+        .what-heading {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 3vw, 2.8rem);
+            font-weight: 300;
+            line-height: 1.3;
+            color: var(--navy);
+            margin-bottom: 2rem;
+        }
+
+        .what-body {
+            font-size: 0.9rem;
+            line-height: 2;
+            color: #4A6080;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.03em;
+        }
+
+        .what-detail {
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            color: var(--gray);
+            padding-top: 1rem;
+            border-top: 1px solid rgba(27,58,92,0.1);
+        }
+
+        /* APPLICATIONS */
+        .applications {
+            padding: 8rem 4rem;
+            background: var(--navy);
+        }
+
+        .applications-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .applications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 5rem;
+        }
+
+        .applications-heading {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 3vw, 2.8rem);
+            font-weight: 300;
+            color: var(--white);
+        }
+
+        .applications-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+        }
+
+        .app-card {
+            padding: 3rem 2.5rem;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: all 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gold);
+            transform: scaleX(0);
+            transition: transform 0.4s;
+        }
+
+        .app-card:hover {
+            background: rgba(232,160,32,0.05);
+        }
+
+        .app-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .app-number {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--gold);
+            margin-bottom: 2rem;
+            opacity: 0.6;
+        }
+
+        .app-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 400;
+            color: var(--white);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .app-body {
+            font-size: 0.8rem;
+            line-height: 1.9;
+            color: rgba(255,255,255,0.45);
+            letter-spacing: 0.03em;
+        }
+
+        /* NENE */
+        .nene {
+            padding: 8rem 4rem;
+            background: var(--off-white);
+            text-align: center;
+        }
+
+        .nene-inner {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .nene-eyebrow {
+            font-size: 0.65rem;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 2rem;
+        }
+
+        .nene-heading {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: 300;
+            color: var(--navy);
+            margin-bottom: 2rem;
+            letter-spacing: 0.05em;
+        }
+
+        .nene-body {
+            font-size: 0.85rem;
+            line-height: 2;
+            color: #4A6080;
+            margin-bottom: 3rem;
+            letter-spacing: 0.03em;
+        }
+
+        .nene-specs {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-bottom: 3rem;
+        }
+
+        .nene-spec {
+            text-align: center;
+        }
+
+        .spec-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: var(--navy);
+            line-height: 1;
+        }
+
+        .spec-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--gray);
+            margin-top: 0.5rem;
+        }
+
+        .coming-soon {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 2rem;
+            background: var(--navy);
+            color: var(--gold);
+            font-size: 0.7rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            text-decoration: none;
+        }
+
+        /* CONTACT */
+        .contact {
+            padding: 8rem 4rem;
+            background: var(--dark);
+            text-align: center;
+        }
+
+        .contact-inner {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .contact-heading {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 300;
+            color: var(--white);
+            margin-bottom: 1.5rem;
+        }
+
+        .contact-sub {
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 3rem;
+            line-height: 1.8;
+        }
+
+        .contact-email {
+            display: inline-block;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            color: var(--gold);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(232,160,32,0.3);
+            padding-bottom: 0.25rem;
+            transition: border-color 0.3s;
+            margin-bottom: 4rem;
+        }
+
+        .contact-email:hover {
+            border-color: var(--gold);
+        }
+
+        /* FOOTER */
+        footer {
+            padding: 2rem 4rem;
+            background: var(--dark);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-left {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: rgba(255,255,255,0.2);
+        }
+
+        .footer-right {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: rgba(255,255,255,0.2);
+            text-align: right;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        /* HAMBURGER */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 4px;
+            background: none;
+            border: none;
+        }
+        .hamburger span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--white);
+            transition: all 0.3s;
+        }
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            background: rgba(27, 58, 92, 0.98);
+            padding: 1.5rem 2rem;
+            z-index: 99;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .mobile-menu.open { display: flex; }
+        .mobile-menu a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 0.85rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            nav { padding: 1rem 1.5rem; }
+            .nav-links { display: none; }
+            .hamburger { display: flex; }
+            .hero { padding: 7rem 1.5rem 3rem; }
+            .hero-content { grid-template-columns: 1fr; gap: 2rem; }
+            .hero-visual {
+                display: flex;
+                transform: scale(0.85);
+                transform-origin: center top;
+            }
+            .what { padding: 4rem 1.5rem; }
+            .what-inner { grid-template-columns: 1fr; gap: 2rem; }
+            .applications { padding: 4rem 1.5rem; }
+            .applications-grid { grid-template-columns: 1fr; }
+            .nene { padding: 4rem 1.5rem; }
+            .nene-specs { gap: 1.5rem; }
+            .nene-heading { font-size: 3.5rem; }
+            .contact { padding: 4rem 1.5rem; }
+            footer { padding: 1.5rem; flex-direction: column; gap: 1rem; text-align: center; }
+            .hero-headline { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav>
+        <a href="#" class="nav-logo">
+            <img src="nene-icon.png" alt="Touchlinker™" style="height:62px; width:auto; margin-right:12px;">
+            TOUCH<span>LINKER&trade;</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#what">About</a></li>
+            <li><a href="#applications">Applications</a></li>
+            <li><a href="#nene">Nene&trade;</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </nav>
+
+    <!-- MOBILE MENU -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#what" onclick="closeMobileMenu()">About</a>
+        <a href="#applications" onclick="closeMobileMenu()">Applications</a>
+        <a href="#nene" onclick="closeMobileMenu()">Nene&trade;</a>
+        <a href="#contact" onclick="closeMobileMenu()">Contact</a>
+    </div>
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <p class="hero-eyebrow">Touchlinker™ Inc. — Patent Pending</p>
+                <h1 class="hero-headline">
+                    I want to <em>communicate</em>.<br>
+                    In blessed silence.<br>
+                    Without looking.<br>
+                    Without speaking.<br>
+                    Without squinting at a screen.
+                </h1>
+                <p class="hero-sub">
+                    Language through your fingertips.<br>
+                    Silent. Eyes-free. Bidirectional.
+                </p>
+                <a href="#what" class="hero-cta">Discover Touchlinker™</a>
+            </div>
+            <div class="hero-visual">
+                <div class="finger-display">
+                    <div class="finger">
+                        <div class="finger-pad active">
+                            <div class="pulse"></div>
+                        </div>
+                        <span class="finger-label">Index</span>
+                    </div>
+                    <div class="finger">
+                        <div class="finger-pad active active-2">
+                            <div class="pulse"></div>
+                        </div>
+                        <span class="finger-label">Middle</span>
+                    </div>
+                    <div class="finger">
+                        <div class="finger-pad">
+                            <div class="pulse"></div>
+                        </div>
+                        <span class="finger-label">Ring</span>
+                    </div>
+                    <div class="finger">
+                        <div class="finger-pad active active-3">
+                            <div class="pulse"></div>
+                        </div>
+                        <span class="finger-label">Little</span>
+                    </div>
+                </div>
+                <p class="hero-word">N · E · N · E</p>
+                <div class="patent-badge">Patent Pending — Application 63/997,831</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WHAT IT IS -->
+    <section class="what" id="what">
+        <div class="what-inner">
+            <div>
+                <p class="section-label">What It Is</p>
+            </div>
+            <div>
+                <h2 class="what-heading">A new channel<br>for human language.</h2>
+                <p class="what-body">
+                    Touchlinker™ develops haptic communication technology enabling silent, 
+                    eyes-free language transmission through vibrotactile finger patterns. 
+                    Our patented single-gesture encoding system delivers full language 
+                    through four finger actuators simultaneously — no screen, no sound, 
+                    just touch.
+                </p>
+                <p class="what-body">
+                    The encoding system — Nene™ — maps 47 characters to natural finger 
+                    patterns learnable in four minutes. Tap, touch, and compound gestures 
+                    across four fingers create a complete haptic alphabet. 
+                    Bidirectional. Wireless. Always available.
+                </p>
+                <p class="what-detail">
+                    Touchlinker™ Inc. — Incorporated Delaware 2026 &nbsp;·&nbsp; Patent Pending 63/997,831
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- APPLICATIONS -->
+    <section class="applications" id="applications">
+        <div class="applications-inner">
+            <div class="applications-header">
+                <div>
+                    <p class="section-label" style="color: rgba(232,160,32,0.6);">Applications</p>
+                    <h2 class="applications-heading">Where Nene&trade;<br>changes everything.</h2>
+                </div>
+            </div>
+            <div class="applications-grid">
+                <div class="app-card">
+                    <p class="app-number">01</p>
+                    <h3 class="app-title">Closed Captioning</h3>
+                    <p class="app-body">
+                        Receive captions through your fingers. Eyes on the 
+                        performance — theater, opera, film, lectures — 
+                        not on a glowing screen in the dark.
+                    </p>
+                </div>
+                <div class="app-card">
+                    <p class="app-number">02</p>
+                    <h3 class="app-title">Silent Communication</h3>
+                    <p class="app-body">
+                        Compose and receive messages invisibly. No reading 
+                        glasses required. No screen. No sound. Language 
+                        arrives through your hand wherever you are.
+                    </p>
+                </div>
+                <div class="app-card">
+                    <p class="app-number">03</p>
+                    <h3 class="app-title">Accessibility</h3>
+                    <p class="app-body">
+                        Independent wireless communication for the deafblind 
+                        and hearing impaired. Full language through touch — 
+                        no specialized hardware required beyond a smartphone.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NENE -->
+    <section class="nene" id="nene">
+        <div class="nene-inner">
+            <p class="nene-eyebrow">Introducing</p>
+            <h2 class="nene-heading">Nene&trade;</h2>
+            <p class="nene-body">
+                The first haptic language system learnable in four minutes. 
+                Named for the Hawaiian state bird — No Eyes, No Ears — 
+                Nene™ encodes 47 characters through natural finger patterns 
+                delivered simultaneously across four finger actuators. 
+                Silent. Wireless. Bidirectional. Fingers to fingers.
+            </p>
+            <div class="nene-specs">
+                <div class="nene-spec">
+                    <div class="spec-number">47</div>
+                    <div class="spec-label">Characters</div>
+                </div>
+                <div class="nene-spec">
+                    <div class="spec-number">4</div>
+                    <div class="spec-label">Minutes to learn</div>
+                </div>
+                <div class="nene-spec">
+                    <div class="spec-number">4</div>
+                    <div class="spec-label">Finger channels</div>
+                </div>
+            </div>
+            <a href="#contact" class="coming-soon">nenetext.com — Coming Soon</a>
+        </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="contact" id="contact">
+        <div class="contact-inner">
+            <h2 class="contact-heading">Get In Touch</h2>
+            <p class="contact-sub">
+                Interested in Touchlinker™? Investors, accessibility 
+                organizations, enterprise partners, and press 
+                are welcome to reach out.
+            </p>
+            <a href="mailto:hello@touchlinker.com" class="contact-email">
+                hello@touchlinker.com
+            </a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-left">
+            © 2026 Touchlinker™ Inc. All rights reserved.
+        </div>
+        <div class="footer-right">
+            Patent Pending — Application 63/997,831<br>
+            Incorporated in Delaware
+        </div>
+    </footer>
+
+    <!-- Finger animation script -->
+    <script>
+        const pads = document.querySelectorAll('.finger-pad');
+        const patterns = [
+            [0], [1], [2], [3],
+            [0,1], [0,2], [0,3],
+            [1,2], [1,3], [2,3]
+        ];
+        let current = 0;
+
+        function animateFingers() {
+            pads.forEach(p => {
+                p.classList.remove('active', 'active-2', 'active-3');
+            });
+            const pattern = patterns[current % patterns.length];
+            pattern.forEach((i, idx) => {
+                const classes = ['active', 'active-2', 'active-3'];
+                pads[i].classList.add(classes[idx] || 'active');
+            });
+            current++;
+        }
+
+        animateFingers();
+        setInterval(animateFingers, 1200);
+
+        // Hamburger menu
+        const hamburger = document.getElementById('hamburger');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        hamburger.addEventListener('click', () => {
+            mobileMenu.classList.toggle('open');
+        });
+
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('open');
+        }
+
+        // Smooth scroll for nav
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                const target = document.querySelector(a.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+
+</body>
+</html>

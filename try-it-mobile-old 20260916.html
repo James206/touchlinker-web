@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nene — Tier 1a</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0a0c16;
+    --glass:#11142a;
+    --glass-2:#161a36;
+    --ink:#eae6da;
+    --muted:#8891b8;
+    --faint:#565f8c;
+    --amber:#f2a65a;
+    --amber-glow:rgba(242,166,90,.35);
+    --teal:#3b82f6;
+    --teal-glow:rgba(59,130,246,.35);
+    --line:rgba(233,230,218,.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%; height:100dvh;
+    margin:0;
+    overscroll-behavior:none; /* stops rubber-band bounce, which is most of what read as "the screen moved" */
+    width:100%;
+  }
+  body{
+    min-height:100%; min-height:100dvh;
+    overflow-y:auto; /* genuine scroll stays possible as an escape hatch -- never trap the user with no way back to the typing surface */
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, #171d3d 0%, var(--void) 60%),
+      var(--void);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:clamp(12px,4vh,36px) 16px clamp(16px,5vh,60px);
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--ink);
+  }
+  .eyebrow{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:12px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:26px;
+    margin:0 0 8px;
+  }
+  .sub{
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:32px;
+    text-align:center;
+    max-width:480px;
+    line-height:1.6;
+  }
+
+  .surface{
+    width:100%;
+    max-width:640px;
+    background:linear-gradient(180deg, var(--glass), var(--glass-2));
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:28px;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,.6);
+  }
+
+  .mode-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  .mode-badge{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:11px;
+    letter-spacing:.08em;
+    padding:5px 12px;
+    border-radius:20px;
+    border:1px solid var(--line);
+    color:var(--muted);
+    transition:all .2s ease;
+  }
+  .mode-badge.alpha{ color:var(--ink); }
+  .mode-badge.digit{ color:var(--amber); border-color:var(--amber-glow); background:rgba(242,166,90,.08); }
+  .flash{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--teal);
+    opacity:0;
+    transition:opacity .15s ease;
+  }
+  .flash.show{ opacity:1; }
+  .mode-hint{
+    font-size:10px;
+    color:var(--faint);
+    margin-bottom:14px;
+    text-align:center;
+  }
+
+  .output-wrap{
+    position:relative;
+  }
+  .output{
+    min-height:160px;
+    max-height:280px;
+    overflow-y:auto;
+    background:rgba(0,0,0,.25);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:18px 20px;
+    font-size:19px;
+    line-height:1.6;
+    white-space:pre-wrap;
+    word-break:break-word;
+    outline:none;
+    cursor:text;
+    -webkit-touch-callout:none;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  .output:focus{ border-color:var(--teal-glow); }
+  .cursor{
+    display:inline-block;
+    width:9px; height:20px;
+    background:var(--teal);
+    vertical-align:text-bottom;
+    margin-left:1px;
+    animation:blink 1s step-end infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  .placeholder{
+    color:var(--faint);
+    font-style:italic;
+  }
+
+  .help-modal{
+    display:none;
+    position:absolute; inset:0;
+    z-index:5;
+    background:rgba(10,12,22,.92);
+    border-radius:12px;
+    align-items:center; justify-content:center;
+    padding:14px;
+  }
+  .help-modal.active{ display:flex; }
+  .help-card{
+    width:100%;
+    max-width:100%;
+    max-height:100%;
+    overflow-y:auto;
+    background:linear-gradient(180deg, var(--glass), var(--glass-2));
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px;
+  }
+  .help-card h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:17px;
+    margin:0 0 4px;
+  }
+  .help-hint{
+    font-size:11px !important;
+    color:var(--faint) !important;
+    font-style:italic;
+    margin:0 0 14px;
+  }
+  .help-card h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:12px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin:18px 0 6px;
+  }
+  .help-card p, .help-card li{
+    font-size:12.5px;
+    line-height:1.7;
+    color:var(--muted);
+  }
+  .help-card ul{ margin:4px 0; padding-left:18px; }
+  .help-card b{ color:var(--ink); }
+  .help-close{
+    display:block;
+    margin:18px 0 0 auto;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:7px 14px;
+    cursor:pointer;
+  }
+  .prompt-overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(10,12,22,.82);
+    border-radius:12px;
+    text-align:center;
+    padding:20px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px;
+    color:var(--muted);
+    cursor:pointer;
+    transition:opacity .2s ease;
+  }
+  .prompt-overlay b{ color:var(--ink); }
+
+  .controls{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:16px;
+  }
+  .hint{
+    font-size:11px;
+    color:var(--faint);
+  }
+  button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.04em;
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:7px 14px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  button:hover{ color:var(--ink); border-color:var(--muted); }
+
+  .legend{
+    display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
+    margin-top:22px;
+    font-size:11px; color:var(--muted);
+  }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .swatch{ width:8px; height:8px; border-radius:2px; display:inline-block; }
+  .swatch.amber{ background:var(--amber); }
+  .swatch.teal{ background:var(--teal); }
+
+  .fingers{
+    position:relative;
+    width:100%;
+    height:min(115vw, 55vh);
+    max-height:440px;
+    margin-top:20px;
+  }
+  .finger{
+    position:absolute;
+    top:50%; left:50%;
+    width:22vw; height:22vw;
+    max-width:100px; max-height:100px;
+    min-width:64px; min-height:64px;
+    border-radius:20%;
+    background:var(--glass-2);
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:6vw;
+    max-font-size:26px;
+    font-weight:700;
+    color:var(--muted);
+    transition:transform .3s cubic-bezier(.34,1.35,.64,1), box-shadow .08s ease, border-color .08s ease;
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+    cursor:pointer;
+  }
+  .finger.active{
+    border-color:var(--teal);
+    color:var(--ink);
+    box-shadow:0 0 0 4px var(--teal-glow);
+  }
+  .fingers-hint{
+    text-align:center;
+    font-size:11px;
+    color:var(--faint);
+    margin-top:8px;
+  }
+  .calibrate-overlay{
+    position:absolute;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:rgba(10,12,22,.9);
+    border-radius:12px;
+    text-align:center;
+    padding:20px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    z-index:5;
+    cursor:crosshair;
+  }
+  .calibrate-overlay.active{ display:flex; }
+  .cheat-toggle{
+    display:block;
+    margin:16px auto 0;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.04em;
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:8px 16px;
+    cursor:pointer;
+  }
+  .cheat-toggle:hover{ color:var(--ink); border-color:var(--muted); }
+  .cheat-sheet{
+    display:none;
+    margin-top:14px;
+    max-height:38vh;
+    overflow-y:auto;
+  }
+  .cheat-sheet.open{ display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:6px; }
+  .cheat-group{
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .cheat-group-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:9px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--faint);
+    background:rgba(255,255,255,.03);
+    padding:3px 5px;
+    text-align:center;
+    border-bottom:1px solid var(--line);
+  }
+  .cheat-alt-note{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:7.5px;
+    line-height:1.7;
+    color:var(--muted);
+    padding:5px 6px;
+  }
+  .cheat-row{
+    display:grid;
+    grid-template-columns:13px repeat(4, 1fr);
+    align-items:center;
+    height:15px;
+  }
+  .cheat-row.col-head{
+    height:13px;
+    background:rgba(255,255,255,.02);
+  }
+  .cheat-col-label{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:7px;
+    text-align:center;
+    color:var(--faint);
+  }
+  .cheat-char{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:9px;
+    text-align:center;
+    color:var(--ink);
+  }
+  .cheat-cell{
+    height:15px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cheat-dot{
+    width:10px; height:10px;
+    border-radius:2px;
+  }
+  .cheat-dot.tap{ background:var(--amber); }
+  .cheat-dot.touch{ background:var(--teal); }
+  .cheat-legend{
+    grid-column:1 / -1;
+    display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+    padding:6px;
+    font-size:8px; color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:8px;
+  }
+  .cheat-legend span{ display:flex; align-items:center; gap:4px; }
+  .first-try{
+    margin-top:16px;
+    padding:12px 16px;
+    background:rgba(69,199,184,.08);
+    border:1px solid var(--teal-glow);
+    border-radius:10px;
+    font-size:12.5px;
+    line-height:1.6;
+    color:var(--muted);
+    text-align:center;
+  }
+  .first-try b{ color:var(--teal); }
+  .first-try-label{
+    display:block;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:10px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin-bottom:4px;
+  }
+
+  .landscape-warning{
+    display:none;
+    position:fixed; inset:0;
+    z-index:50;
+    background:var(--void);
+    flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center; padding:32px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px; color:var(--muted);
+  }
+  @media (orientation:landscape) and (hover:none) and (pointer:coarse){
+    .landscape-warning{ display:flex; }
+  }
+  .landscape-warning.dismissed{ display:none !important; }
+  .landscape-dismiss{
+    display:block;
+    margin-top:16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:7px 14px;
+    cursor:pointer;
+  }
+  .lock-toggle{
+    position:fixed;
+    top:10px; right:10px;
+    z-index:20;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    background:var(--glass-2);
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:6px 12px;
+    cursor:pointer;
+  }
+  .lock-toggle.locked{ color:var(--teal); border-color:var(--teal-glow); }
+  html.screen-locked, html.screen-locked body{
+    touch-action:none;
+    overscroll-behavior:none;
+  }
+</style>
+</head>
+<body>
+
+  <div class="landscape-warning" id="landscapeWarning">
+    Nene works in portrait only right now — rotate your phone back to keep typing.
+    <button class="landscape-dismiss" id="landscapeDismiss">I know, let me through anyway</button>
+  </div>
+  <button id="lockToggle" class="lock-toggle">Lock screen</button>
+
+  <div class="eyebrow">Touchlinker · Tier 1a</div>
+  <h1>Nene — browser edition</h1>
+  <p class="sub">Click the box below, rest your right hand's four fingers on V, B, N, M, and start typing. No install, no keyboard remap — this page just listens while it has focus.</p>
+
+  <div class="surface">
+    <div class="mode-row">
+      <div class="mode-badge alpha" id="modeBadge">ALPHA</div>
+      <div class="flash" id="flash"></div>
+    </div>
+    <div class="mode-hint">touch V+tap M → digit &nbsp;·&nbsp; touch B+tap M → alpha &nbsp;·&nbsp; touch B+tap N → Alt</div>
+
+    <div class="output-wrap">
+      <div class="output" id="output" tabindex="0"><span class="placeholder" id="placeholder">Typed characters will appear here…</span><span class="cursor"></span></div>
+      <div class="prompt-overlay" id="overlay">Click here, then rest your right hand's four fingers on <b>V&nbsp;B&nbsp;N&nbsp;M</b></div>
+      <div class="help-modal" id="helpModal">
+        <div class="help-card">
+          <h2>Nene primer</h2>
+          <p class="help-hint">(backspace closes this · D scrolls down · U scrolls up)</p>
+          <p>Nene sends letters through your four fingers — V (index), B (middle), N (ring), M (little). Every letter is either a <b>tap</b> (quick) or a <b>touch</b> (held), on one or two fingers at once.</p>
+
+          <h3>Letters</h3>
+          <ul>
+            <li><b>A–J</b> — tap 1 or 2 fingers together</li>
+            <li><b>K–T</b> — touch (hold) 1 or 2 fingers together</li>
+            <li><b>U–Z</b> — hold one finger down, tap a second finger while it's held</li>
+          </ul>
+
+          <h3>Space, backspace, period</h3>
+          <ul>
+            <li><b>Space</b> — touch V, tap B</li>
+            <li><b>Backspace</b> — touch V, tap N</li>
+            <li><b>Period</b> — touch N, tap M</li>
+          </ul>
+
+          <h3>Modes</h3>
+          <ul>
+            <li><b>Digit mode</b> — touch V, tap M</li>
+            <li><b>Alpha mode</b> (back to letters) — touch B, tap M</li>
+          </ul>
+
+          <h3>Alt — everything else lives here</h3>
+          <p>Touch B, tap N to open Alt. Tap Alt again right away for <b>Enter</b>. Or type a word first (T, W, H, Q, N so far), then close with Alt again to run it:</p>
+          <ul>
+            <li><b>T</b> — open your text app</li>
+            <li><b>W</b> — open a web tab</li>
+            <li><b>H</b> — this primer</li>
+            <li><b>Q</b> — question mark</li>
+            <li><b>N</b> — NT1 (coming soon)</li>
+          </ul>
+          <p>Backspace works mid-word if you fumble a letter — nothing sends until you close with the second Alt.</p>
+
+          <button id="helpClose" class="help-close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <span class="hint">V=index · B=middle · N=ring · M=little</span>
+      <button id="clearBtn">Clear</button>
+    </div>
+
+    <div class="fingers" id="fingersContainer">
+      <div class="finger" id="f1" data-key="v">V</div>
+      <div class="finger" id="f2" data-key="b">B</div>
+      <div class="finger" id="f3" data-key="n">N</div>
+      <div class="finger" id="f4" data-key="m">M</div>
+      <div class="calibrate-overlay" id="calibrateOverlay">
+        <div id="calibrateText">Tap where your index finger feels natural</div>
+      </div>
+    </div>
+    <div class="fingers-hint">On a phone or tablet, tap these directly — same as pressing V B N M on a keyboard</div>
+    <button id="calibrateBtn" class="cheat-toggle">Calibrate to my hand</button>
+
+    <div class="first-try">
+      <span class="first-try-label">Try this first:</span>
+      tap <b>B+N</b> together, then tap <b>B+M</b> together → types <b>HI</b>
+    </div>
+
+    <button id="cheatToggle" class="cheat-toggle">Show cheat sheet</button>
+    <div class="cheat-sheet" id="cheatSheet"></div>
+  </div>
+
+  <div class="legend">
+    <span><i class="swatch amber"></i>digit mode active</span>
+    <span><i class="swatch teal"></i>finger currently touched</span>
+  </div>
+
+<script>
+(function(){
+  // ── Decode core — faithful port of nenesen.py, verified against 26 test cases ──
+  const TAP_MAX = 0.25;
+  const TOUCH_MIN = 0.25;
+  const FINGER_KEYS = { v:1, a:1, b:2, n:3, c:3, m:4, d:4 };
+
+  const ENCODING_MAP = {
+    A:{fingers:[1],mode:'tap'}, B:{fingers:[2],mode:'tap'}, C:{fingers:[3],mode:'tap'}, D:{fingers:[4],mode:'tap'},
+    E:{fingers:[1,2],mode:'tap'}, F:{fingers:[1,3],mode:'tap'}, G:{fingers:[1,4],mode:'tap'},
+    H:{fingers:[2,3],mode:'tap'}, I:{fingers:[2,4],mode:'tap'}, J:{fingers:[3,4],mode:'tap'},
+    K:{fingers:[1],mode:'touch'}, L:{fingers:[2],mode:'touch'}, M:{fingers:[3],mode:'touch'}, N:{fingers:[4],mode:'touch'},
+    O:{fingers:[1,2],mode:'touch'}, P:{fingers:[1,3],mode:'touch'}, Q:{fingers:[1,4],mode:'touch'},
+    R:{fingers:[2,3],mode:'touch'}, S:{fingers:[2,4],mode:'touch'}, T:{fingers:[3,4],mode:'touch'},
+    U:{ground:2,visitor:1,mode:'compound'}, V:{ground:3,visitor:1,mode:'compound'}, W:{ground:4,visitor:1,mode:'compound'},
+    X:{ground:3,visitor:2,mode:'compound'}, Y:{ground:4,visitor:2,mode:'compound'}, Z:{ground:4,visitor:3,mode:'compound'},
+    // '+' '-' '*' '/' '@' '_' all retired as characters — every punctuation
+    // compound slot except one is now a control gesture, freeing the whole
+    // alphabet+space+backspace+control set from ever needing 3+ simultaneous
+    // fingers (was the root of Mat's keyboard-rollover problem and James's
+    // small-screen reliability problem alike).
+    ' ':{ground:1,visitor:2,mode:'compound'}, '\b':{ground:1,visitor:3,mode:'compound'},
+    '__DIGIT_ON__':{ground:1,visitor:4,mode:'compound'}, '__ALT__':{ground:2,visitor:3,mode:'compound'},
+    '__DIGIT_OFF__':{ground:2,visitor:4,mode:'compound'}, '.':{ground:3,visitor:4,mode:'compound'},
+  };
+  const DIGIT_MAP = { '1':'1','2':'2','3':'3','4':'4','1,2':'5','1,3':'6','1,4':'7','2,3':'8','2,4':'9','3,4':'0' };
+  const fkey = (arr) => [...arr].sort((a,b)=>a-b).join(',');
+
+  const state = { pressTimes:{}, backTapDetected:{}, pendingChord:{}, digitMode:'off', altMode:false, altBuffer:'' };
+
+  function findCharacter(fingers, mode){
+    const f = fkey(fingers);
+    // 3+ simultaneous fingers have no mapping anywhere below — a 3 or 4
+    // finger chord falls straight through every branch and returns null,
+    // which sendChar treats as a true no-op: nothing appended, nothing to
+    // backspace over. This is intentional, not an oversight — the old
+    // 3/4-finger gestures (space, backspace, enter, period, ?) have all
+    // moved to 2-finger compounds or the Alt-sequence system below.
+    //
+    // While buffering an Alt macro word, digit-mode's digit lookup is
+    // bypassed so letters always decode as letters — otherwise a user who
+    // triggers Alt while already in digit mode would have their macro
+    // word silently misread as digits.
+    if(state.digitMode!=='off' && !state.altMode && (mode==='tap'||mode==='touch')){ const d=DIGIT_MAP[f]; if(d) return d; }
+    for(const [char,p] of Object.entries(ENCODING_MAP)){
+      if(p.mode===mode && p.fingers && fkey(p.fingers)===f) return char;
+    }
+    return null;
+  }
+  function findCompound(ground, visitor){
+    for(const [char,p] of Object.entries(ENCODING_MAP)){
+      if(p.mode==='compound' && p.ground===ground && p.visitor===visitor) return char;
+    }
+    return null;
+  }
+  // Alt macro actions. T and W leave the page (real OS-level actions, not
+  // guaranteed to work for every app — sms: and a new tab are the two that
+  // are reliably possible from a webpage). N is a placeholder until NT1
+  // actually exists as a module. H writes the live macro list to the output
+  // itself, not a flash, since flashStatus disappears after 700ms — too
+  // short to actually read a list.
+  // A real anchor + .click() is more reliably honored by mobile browsers for
+  // custom URL schemes (sms:, tel:) than setting window.location.href
+  // directly from a nested callback — the latter can be silently swallowed
+  // even when it's ultimately triggered by a genuine touch.
+  function navigateTo(href){
+    const a = document.createElement('a');
+    a.href = href;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  const ALT_MACROS = {
+    T: () => { flashStatus('OPENING TEXT APP'); navigateTo('sms:'); },
+    W: () => { flashStatus('OPENING WEB'); window.open('https://www.google.com', '_blank'); },
+    H: () => { openHelp(); },
+    N: () => { flashStatus('NT1 — COMING SOON'); },
+    Q: () => { appendChar('?'); flashStatus('?'); },
+  };
+  function executeMacro(word){
+    const action = ALT_MACROS[word];
+    if(action) action();
+    else flashStatus('UNKNOWN: ' + word);
+  }
+
+  function sendChar(char){
+    // While the help modal is open, every gesture is repurposed for
+    // reading it rather than typing underneath it — nothing should leak
+    // through to digit mode, Alt, or the output while you're mid-primer.
+    if(helpModal.classList.contains('active')){
+      if(char==='D') scrollHelp(1);
+      else if(char==='U') scrollHelp(-1);
+      else if(char==='\b') closeHelp();
+      return; // anything else is silently ignored, same as a stray 3+ finger chord
+    }
+
+    // Direct mode switch — unconditional, no prior-state awareness needed.
+    if(char==='__DIGIT_ON__'){ state.digitMode='on'; flashStatus('DIGIT'); updateModeBadge(); return; }
+    if(char==='__DIGIT_OFF__'){ state.digitMode='off'; flashStatus('ALPHA'); updateModeBadge(); return; }
+
+    // Alt gateway: first press opens the buffer; a second Alt with nothing
+    // buffered is Enter (the fast path); a second Alt with a buffered word
+    // executes that macro. This is the single entry point for everything
+    // that doesn't have room as a direct gesture — the gesture set itself
+    // never grows again, only the vocabulary of words inside Alt does.
+    if(char==='__ALT__'){
+      if(!state.altMode){
+        state.altMode = true; state.altBuffer = '';
+        flashStatus('ALT'); updateModeBadge();
+      } else if(state.altBuffer === ''){
+        state.altMode = false;
+        appendChar('\n');
+        flashStatus('ENTER'); updateModeBadge();
+      } else {
+        const word = state.altBuffer;
+        state.altMode = false; state.altBuffer = '';
+        updateModeBadge();
+        executeMacro(word);
+      }
+      return;
+    }
+
+    if(state.altMode){
+      if(char==='\b'){
+        state.altBuffer = state.altBuffer.slice(0, -1);
+        flashStatus(state.altBuffer ? 'ALT: ' + state.altBuffer : 'ALT');
+        return;
+      }
+      if(/^[A-Za-z0-9]$/.test(char)){
+        state.altBuffer += char.toUpperCase();
+        flashStatus('ALT: ' + state.altBuffer);
+        return;
+      }
+      return; // anything else mid-buffer is silently ignored, same as a stray 3+ finger chord
+    }
+
+    if(char==='\b') deleteChar();
+    else appendChar(char);
+  }
+
+  function onPress(k, now){
+    if(!(k in FINGER_KEYS)) return;
+    if(k in state.pressTimes) return;
+    state.pressTimes[k] = now;
+    setFingerVisual(FINGER_KEYS[k], true);
+    for(const [heldKey, heldTime] of Object.entries(state.pressTimes)){
+      if(heldKey===k) continue;
+      const held = now - heldTime;
+      if(TOUCH_MIN*0.2 < held && held < TOUCH_MIN*1.5){ state.backTapDetected[k]=FINGER_KEYS[heldKey]; break; }
+    }
+  }
+
+  function resolveRelease(k, now){
+    if(!(k in FINGER_KEYS)) return;
+    if(!(k in state.pressTimes)){ return; }
+    const holdDuration = now - state.pressTimes[k];
+    delete state.pressTimes[k];
+
+    if(k in state.backTapDetected){
+      const groundFinger = state.backTapDetected[k];
+      delete state.backTapDetected[k];
+      const visitorFinger = FINGER_KEYS[k];
+      const char = findCompound(groundFinger, visitorFinger);
+      state.pendingChord = {};
+      Object.entries(FINGER_KEYS).filter(([,f])=>f===groundFinger).forEach(([gk])=>delete state.pressTimes[gk]);
+      if(char) sendChar(char);
+      return;
+    }
+
+    state.pendingChord[k] = { finger: FINGER_KEYS[k], duration: holdDuration };
+    const stillHeld = Object.keys(state.pressTimes).some(hk => hk in FINGER_KEYS);
+    if(stillHeld) return;
+
+    const fingers = [...new Set(Object.values(state.pendingChord).map(v=>v.finger))].sort((a,b)=>a-b);
+    const durations = Object.values(state.pendingChord).map(v=>v.duration);
+    const avg = durations.reduce((a,b)=>a+b,0)/durations.length;
+    state.pendingChord = {};
+    const mode = avg < TAP_MAX ? 'tap' : 'touch';
+    const char = findCharacter(fingers, mode);
+    if(char) sendChar(char);
+  }
+
+  function onRelease(k, now){
+    setFingerVisual(FINGER_KEYS[k], false);
+    // small debounce mirroring nenesen.py's 40ms settle before resolving
+    setTimeout(() => resolveRelease(k, now), 40);
+  }
+
+  // ── DOM wiring ──────────────────────────────────────────────────
+  const outputEl = document.getElementById('output');
+  const placeholderEl = document.getElementById('placeholder');
+  const overlayEl = document.getElementById('overlay');
+  const flashEl = document.getElementById('flash');
+  const modeBadgeEl = document.getElementById('modeBadge');
+  const clearBtn = document.getElementById('clearBtn');
+  const fingerEls = { 1: document.getElementById('f1'), 2: document.getElementById('f2'), 3: document.getElementById('f3'), 4: document.getElementById('f4') };
+
+  let outputText = '';
+  let flashTimer = null;
+
+  function render(){
+    if(outputText.length === 0){
+      outputEl.innerHTML = '<span class="placeholder">Typed characters will appear here…</span><span class="cursor"></span>';
+    } else {
+      outputEl.innerHTML = escapeHtml(outputText) + '<span class="cursor"></span>';
+    }
+    outputEl.scrollTop = outputEl.scrollHeight;
+  }
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function appendChar(c){ outputText += c; render(); }
+  function deleteChar(){ outputText = outputText.slice(0,-1); render(); }
+
+  function flashStatus(msg){
+    flashEl.textContent = msg;
+    flashEl.classList.add('show');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => flashEl.classList.remove('show'), 700);
+  }
+  function updateModeBadge(){
+    if(state.altMode){
+      modeBadgeEl.textContent = 'ALT';
+      modeBadgeEl.className = 'mode-badge digit';
+      return;
+    }
+    if(state.digitMode === 'off'){
+      modeBadgeEl.textContent = 'ALPHA';
+      modeBadgeEl.className = 'mode-badge alpha';
+    } else {
+      modeBadgeEl.textContent = 'DIGIT';
+      modeBadgeEl.className = 'mode-badge digit';
+    }
+  }
+  function setFingerVisual(finger, active){
+    const el = fingerEls[finger];
+    if(el) el.classList.toggle('active', active);
+  }
+
+  let started = false;
+  function start(){
+    started = true;
+    overlayEl.style.opacity = '0';
+    overlayEl.style.pointerEvents = 'none';
+    outputEl.focus();
+  }
+  overlayEl.addEventListener('click', start);
+  outputEl.addEventListener('focus', () => { if(!started) start(); });
+
+  document.addEventListener('keydown', (e) => {
+    if(document.activeElement !== outputEl) return;
+    const k = e.key.toLowerCase();
+    if(!(k in FINGER_KEYS)) return;
+    e.preventDefault();
+    if(e.repeat) return; // ignore OS key-repeat — the source of "herky jerky" in earlier attempts
+    onPress(k, performance.now()/1000);
+  });
+  document.addEventListener('keyup', (e) => {
+    if(document.activeElement !== outputEl) return;
+    const k = e.key.toLowerCase();
+    if(!(k in FINGER_KEYS)) return;
+    e.preventDefault();
+    onRelease(k, performance.now()/1000);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    outputText = '';
+    state.digitMode = 'off';
+    updateModeBadge();
+    render();
+    outputEl.focus();
+  });
+
+  // ── Touch/tap support for phones and tablets ──────────────────────
+  // Feeds the exact same onPress/onRelease pipeline physical keys use —
+  // no changes to the verified decode logic itself, just a new input source.
+  // ── Position drift guard rail ──────────────────────────────────
+  // Every touch already reports exactly where it landed within its button —
+  // this reads that existing data more carefully rather than adding any new
+  // gesture. A single near-edge touch gets a distinct buzz; sustained drift
+  // over several touches (not just one sloppy tap) suggests recalibrating.
+  const driftHistory = { 1: [], 2: [], 3: [], 4: [] };
+  const DRIFT_WINDOW = 8;
+  const EDGE_THRESHOLD = 0.7;   // single touch landing near the edge
+  const DRIFT_THRESHOLD = 0.5;  // sustained average drift across recent touches
+
+  function recordTouchPosition(el, finger, clientX, clientY){
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width/2;
+    const cy = r.top + r.height/2;
+    const dx = (clientX - cx) / (r.width/2);
+    const dy = (clientY - cy) / (r.height/2);
+    const offset = Math.min(1, Math.sqrt(dx*dx + dy*dy)); // 0 = dead center, 1 = at/past edge
+
+    if(offset > EDGE_THRESHOLD && 'vibrate' in navigator){
+      navigator.vibrate([15,40,15]); // distinct double-buzz, different from normal confirmation
+    }
+
+    const hist = driftHistory[finger];
+    hist.push(offset);
+    if(hist.length > DRIFT_WINDOW) hist.shift();
+    if(hist.length === DRIFT_WINDOW){
+      const avg = hist.reduce((a,b)=>a+b,0) / hist.length;
+      if(avg > DRIFT_THRESHOLD) flashStatus('DRIFTING — TRY RECALIBRATING');
+    }
+  }
+
+  Object.values(fingerEls).forEach(el => {
+    const k = el.dataset.key;
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if(!started) start();
+      recordTouchPosition(el, FINGER_KEYS[k], e.clientX, e.clientY);
+      onPress(k, performance.now()/1000);
+    });
+    el.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      onRelease(k, performance.now()/1000);
+    });
+    el.addEventListener('pointercancel', (e) => {
+      // treat like a release so a dragged-off finger doesn't leave a stuck key
+      onRelease(k, performance.now()/1000);
+    });
+  });
+
+  // ── Crescent layout: lower-left to upper-right diagonal sweep, concave bow ──
+  // Positions computed from actually-measured button size, not assumed pixels,
+  // so this fits correctly whatever this phone's real screen width turns out to be.
+  const fingersContainer = document.querySelector('.fingers');
+  const fingerOrder = [fingerEls[1], fingerEls[2], fingerEls[3], fingerEls[4]];
+
+  function layoutCrescent(){
+    const containerRect = fingersContainer.getBoundingClientRect();
+    const btnRect = fingerOrder[0].getBoundingClientRect();
+    const btnSize = btnRect.width;
+
+    // Lean the diagonal's steepness toward whichever dimension the screen actually
+    // has more of — portrait (tall, narrow) gets a steeper sweep so it uses height
+    // instead of fighting a cramped width; landscape gets a shallower one. Blended
+    // with the -35° baseline so it keeps its diagonal character rather than going
+    // fully vertical or horizontal at extreme aspect ratios.
+    const aspectAngle = -Math.atan2(containerRect.height, containerRect.width) * 180 / Math.PI;
+    const angleDeg = (aspectAngle * 0.65) + (-35 * 0.35);
+    const rad = angleDeg * Math.PI / 180;
+    const dx = Math.cos(rad), dy = Math.sin(rad);   // along the diagonal
+    const px = -dy, py = dx;                        // perpendicular, for the concave bow
+
+    const spacing = btnSize * 1.55;                 // center-to-center along the diagonal — must exceed btnSize or buttons overlap; this was the bug
+    const bow = [btnSize*0.30, -btnSize*0.14, -btnSize*0.14, btnSize*0.30]; // outer fingers bow outward — concave arc
+
+    const positions = [0,1,2,3].map(i => {
+      const t = (i - 1.5) * spacing;
+      const b = bow[i];
+      return { x: t*dx + b*px, y: t*dy + b*py };
+    });
+
+    // Scale to actually FILL the container (not just avoid overflowing it) —
+    // uses all available left-right and top-bottom space, whichever dimension is the binding one.
+    const xs = positions.map(p => Math.abs(p.x));
+    const ys = positions.map(p => Math.abs(p.y));
+    const maxX = Math.max(...xs) + btnSize/2;
+    const maxY = Math.max(...ys) + btnSize/2;
+    const scale = Math.min((containerRect.width/2 - 4) / maxX, (containerRect.height/2 - 4) / maxY);
+
+    fingerOrder.forEach((el, i) => {
+      const p = positions[i];
+      // translate(-50%,-50%) self-centers based on the button's actual rendered
+      // size, whatever that clamped to — fixes the desktop drift, which was
+      // the CSS margin offset assuming a size that didn't match the real one.
+      el.style.transform = `translate(-50%, -50%) translate(${(p.x*scale).toFixed(1)}px, ${(p.y*scale).toFixed(1)}px)`;
+    });
+  }
+
+  layoutCrescent();
+  window.addEventListener('resize', layoutCrescent);
+  window.addEventListener('orientationchange', () => setTimeout(layoutCrescent, 100));
+
+  // ── Screen lock ──────────────────────────────────────────────────
+  // Scroll/zoom stay fully adjustable until the user is actually ready
+  // to type — locking too early (or with no way back) is worse than not
+  // locking at all. Auto-engages right after calibration completes,
+  // since that's the moment position is confirmed, but the toggle is
+  // always visible and always works — no state this can get stuck in.
+  const lockToggle = document.getElementById('lockToggle');
+  const viewportMeta = document.querySelector('meta[name="viewport"]');
+  let screenLocked = false;
+
+  function setLocked(locked){
+    screenLocked = locked;
+    document.documentElement.classList.toggle('screen-locked', locked);
+    lockToggle.textContent = locked ? 'Unlock screen' : 'Lock screen';
+    lockToggle.classList.toggle('locked', locked);
+    viewportMeta.setAttribute('content',
+      locked
+        ? 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+        : 'width=device-width, initial-scale=1.0'
+    );
+  }
+
+  lockToggle.addEventListener('click', () => setLocked(!screenLocked));
+
+  // ── Landscape warning — a defensive escape hatch, not just the media-query
+  // fix. Proper fix is scoping the warning to real touch devices only
+  // (hover:none + pointer:coarse), but any edge-case device that still
+  // false-positives should never be a dead end with no way through.
+  const landscapeDismiss = document.getElementById('landscapeDismiss');
+  landscapeDismiss.addEventListener('click', () => {
+    document.getElementById('landscapeWarning').classList.add('dismissed');
+  });
+
+  // ── Help modal ──────────────────────────────────────────────────
+  // Alt-H-Alt opens this instead of writing into the typing output --
+  // a primer shouldn't get mixed into whatever the user was composing.
+  const helpModal = document.getElementById('helpModal');
+  const helpCard = helpModal.querySelector('.help-card');
+  const helpClose = document.getElementById('helpClose');
+  function openHelp(){ helpModal.classList.add('active'); flashStatus('HELP'); }
+  function closeHelp(){ helpModal.classList.remove('active'); }
+  function scrollHelp(dir){ helpCard.scrollBy({ top: dir*140, behavior:'smooth' }); }
+  helpClose.addEventListener('click', closeHelp);
+  helpModal.addEventListener('click', (e) => { if(e.target === helpModal) closeHelp(); });
+
+  // ── Hand calibration ────────────────────────────────────────────
+  // Positions stored as fractions of container width/height, offset from
+  // center — resolution-independent, so a calibration done here still
+  // lines up correctly after rotation or reload.
+  const CALIBRATION_KEY = 'nene_hand_calibration_v1';
+  const calibrateBtn = document.getElementById('calibrateBtn');
+  const calibrateOverlay = document.getElementById('calibrateOverlay');
+  const calibrateText = document.getElementById('calibrateText');
+  const fingerLabels = ['index', 'middle', 'ring', 'little'];
+  let calibrating = false;
+  let calibrationPoints = [];
+
+  function loadCalibration(){
+    try {
+      const raw = localStorage.getItem(CALIBRATION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) { return null; } // localStorage can throw in some private-browsing modes
+  }
+
+  function applyCalibration(){
+    const saved = loadCalibration();
+    if(!saved) return false;
+    const containerRect = fingersContainer.getBoundingClientRect();
+    fingerOrder.forEach((el, i) => {
+      const p = saved[i];
+      const x = p.xPct * containerRect.width;
+      const y = p.yPct * containerRect.height;
+      el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    });
+    return true;
+  }
+
+  function startCalibration(){
+    calibrating = true;
+    calibrationPoints = [];
+    calibrateOverlay.classList.add('active');
+    calibrateText.textContent = `Tap where your ${fingerLabels[0]} finger feels natural`;
+    calibrateBtn.textContent = 'Cancel calibration';
+  }
+
+  function cancelCalibration(){
+    calibrating = false;
+    calibrateOverlay.classList.remove('active');
+    calibrateBtn.textContent = loadCalibration() ? 'Recalibrate to my hand' : 'Calibrate to my hand';
+  }
+
+  calibrateOverlay.addEventListener('pointerdown', (e) => {
+    if(!calibrating) return;
+    e.preventDefault();
+    const containerRect = fingersContainer.getBoundingClientRect();
+    const cx = containerRect.left + containerRect.width/2;
+    const cy = containerRect.top + containerRect.height/2;
+    const xPct = (e.clientX - cx) / containerRect.width;
+    const yPct = (e.clientY - cy) / containerRect.height;
+    calibrationPoints.push({ xPct, yPct });
+
+    if(calibrationPoints.length < 4){
+      calibrateText.textContent = `Tap where your ${fingerLabels[calibrationPoints.length]} finger feels natural`;
+    } else {
+      try { localStorage.setItem(CALIBRATION_KEY, JSON.stringify(calibrationPoints)); }
+      catch(err) { /* private browsing or storage disabled — calibration just won't persist */ }
+      calibrateText.textContent = 'Saved — this is your layout now';
+      setTimeout(() => {
+        calibrating = false;
+        calibrateOverlay.classList.remove('active');
+        calibrateBtn.textContent = 'Recalibrate to my hand';
+        applyCalibration();
+        setLocked(true); // position just confirmed — lock it in, adjustable anytime via the toggle
+      }, 900);
+    }
+  });
+
+  calibrateBtn.addEventListener('click', () => {
+    if(calibrating) cancelCalibration();
+    else startCalibration();
+  });
+
+  // On load: use a saved calibration if one exists; otherwise the computed crescent stands as-is.
+  if(loadCalibration()){
+    calibrateBtn.textContent = 'Recalibrate to my hand';
+    applyCalibration();
+    setLocked(true); // a saved calibration means position was already confirmed in a prior session
+  }
+  window.addEventListener('resize', () => { if(!calibrating) applyCalibration(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { if(!calibrating) applyCalibration(); }, 100));
+
+  // ── Cheat sheet — built directly from ENCODING_MAP, the same data the
+  // decode logic actually uses, so this can never silently drift out of
+  // sync with reality the way two hand-maintained copies eventually would.
+  const cheatToggle = document.getElementById('cheatToggle');
+  const cheatSheet = document.getElementById('cheatSheet');
+  let cheatBuilt = false;
+
+  function fingerCellHtml(pattern, fingerNum){
+    if(pattern.mode === 'compound'){
+      // Ground finger is literally being touched; visitor finger literally taps —
+      // reuse the exact same two dot styles, no third/fourth icon needed.
+      if(pattern.ground === fingerNum) return '<div class="cheat-cell"><div class="cheat-dot touch"></div></div>';
+      if(pattern.visitor === fingerNum) return '<div class="cheat-cell"><div class="cheat-dot tap"></div></div>';
+      return '<div class="cheat-cell"></div>';
+    }
+    const active = pattern.fingers && pattern.fingers.includes(fingerNum);
+    if(!active) return '<div class="cheat-cell"></div>';
+    const cls = pattern.mode === 'tap' ? 'tap' : 'touch';
+    return `<div class="cheat-cell"><div class="cheat-dot ${cls}"></div></div>`;
+  }
+
+  function buildCheatSheet(){
+    const colHead = '<div class="cheat-row col-head"><div></div><div class="cheat-col-label">V</div><div class="cheat-col-label">B</div><div class="cheat-col-label">N</div><div class="cheat-col-label">M</div></div>';
+
+    function group(title, chars, blankRows=0, extras=[]){
+      let blanks = '';
+      for(let i=0; i<blankRows; i++){
+        blanks += '<div class="cheat-row"><div class="cheat-char"></div><div class="cheat-cell"></div><div class="cheat-cell"></div><div class="cheat-cell"></div><div class="cheat-cell"></div></div>';
+      }
+      let rows = chars.map(char => {
+        const pattern = ENCODING_MAP[char];
+        if(!pattern) return '';
+        return `<div class="cheat-row"><div class="cheat-char">${char}</div>${[1,2,3,4].map(f => fingerCellHtml(pattern, f)).join('')}</div>`;
+      }).join('');
+      // Extras are hand-listed here rather than pulled from ENCODING_MAP's
+      // keys directly, since several now use internal tokens (__ALT__ etc.)
+      // that need a real label instead of the raw key. Each extra is either
+      // a compound (ground/visitor) or an old-style multi-finger hold.
+      let extraRows = extras.map(e => {
+        const pattern = e.ground !== undefined
+          ? { ground:e.ground, visitor:e.visitor, mode:'compound' }
+          : { fingers:e.fingers, mode:e.mode };
+        const cells = [1,2,3,4].map(f => fingerCellHtml(pattern, f)).join('');
+        return `<div class="cheat-row"><div class="cheat-char" style="font-size:6.5px;">${e.label}</div>${cells}</div>`;
+      }).join('');
+      return `<div class="cheat-group"><div class="cheat-group-title">${title}</div>${colHead}${blanks}${rows}${extraRows}</div>`;
+    }
+
+    // Digits pulled straight from the real DIGIT_MAP — same single-source-of-truth
+    // principle, so this can't drift from what digit mode actually does either.
+    const digitRows = Object.entries(DIGIT_MAP).map(([fingerKey, digit]) => {
+      const fingers = fingerKey.split(',').map(Number);
+      const cells = [1,2,3,4].map(f => fingers.includes(f)
+        ? '<div class="cheat-cell"><div class="cheat-dot tap"></div></div>'
+        : '<div class="cheat-cell"></div>').join('');
+      return `<div class="cheat-row"><div class="cheat-char">${digit}</div>${cells}</div>`;
+    }).join('');
+    const digitGroup = `<div class="cheat-group"><div class="cheat-group-title">0–9 (digit mode)</div>${colHead}${digitRows}</div>`;
+
+    const legend = `<div class="cheat-legend">
+      <span><i class="cheat-dot tap"></i>tap</span>
+      <span><i class="cheat-dot touch"></i>touch</span>
+      <span>back-tap = touch then tap</span>
+    </div>`;
+
+    let html = legend +
+      group('A–J', 'ABCDEFGHIJ'.split(''), 0, [
+        { label: 'space',      ground: 1, visitor: 2 },
+        { label: 'backspace',  ground: 1, visitor: 3 },
+        { label: 'digit mode', ground: 1, visitor: 4 },
+      ]) +
+      group('K–T', 'KLMNOPQRST'.split(''), 0, [
+        { label: 'Alt',        ground: 2, visitor: 3 },
+        { label: 'alpha mode', ground: 2, visitor: 4 },
+        { label: 'period',     ground: 3, visitor: 4 },
+      ]) +
+      group('U–Z', 'UVWXYZ'.split(''), 4) +
+      digitGroup +
+      `<div class="cheat-group"><div class="cheat-group-title">Alt sequences</div>
+        <div class="cheat-alt-note">
+          Alt, Alt → Enter<br>
+          Alt, word, Alt → run macro<br>
+          T=text&nbsp;&nbsp;W=web&nbsp;&nbsp;H=help&nbsp;&nbsp;Q=?&nbsp;&nbsp;N=NT1
+        </div>
+      </div>`;
+
+    cheatSheet.innerHTML = html;
+    cheatBuilt = true;
+  }
+
+  cheatToggle.addEventListener('click', () => {
+    if(!cheatBuilt) buildCheatSheet();
+    const isOpen = cheatSheet.classList.toggle('open');
+    cheatToggle.textContent = isOpen ? 'Hide cheat sheet' : 'Show cheat sheet';
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

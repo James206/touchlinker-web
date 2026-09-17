@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nene — Hanon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0a0c16; --glass:#11142a; --glass-2:#161a36;
+    --ink:#eae6da; --muted:#8891b8; --faint:#565f8c;
+    --amber:#f2a65a; --amber-glow:rgba(242,166,90,.35);
+    --teal:#3b82f6; --teal-glow:rgba(59,130,246,.35);
+    --error:#ff5c7a; --error-glow:rgba(255,92,122,.32);
+    --line:rgba(233,230,218,.08);
+  }
+  *{box-sizing:border-box; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
+  html,body{ height:100%; height:100dvh; margin:0; overscroll-behavior:none; width:100%; }
+  body{
+    min-height:100%; min-height:100dvh; overflow-y:auto;
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, #171d3d 0%, var(--void) 60%),
+      var(--void);
+    display:flex; flex-direction:column; align-items:center;
+    padding:clamp(12px,4vh,32px) 16px clamp(16px,5vh,48px);
+    font-family:'IBM Plex Mono', monospace; color:var(--ink);
+  }
+  .eyebrow{ font-family:'Space Grotesk', sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin-bottom:4px; }
+  h1{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:22px; margin:0 0 6px; }
+
+  .status-row{ display:flex; gap:10px; align-items:center; margin-bottom:16px; }
+  .tier-badge{
+    font-family:'Space Grotesk', sans-serif; font-size:11px; letter-spacing:.06em;
+    padding:5px 12px; border-radius:20px; border:1px solid var(--teal-glow);
+    color:var(--teal); background:rgba(59,130,246,.08);
+  }
+  .streak{ font-size:11px; color:var(--faint); }
+  .streak b{ color:var(--muted); }
+
+  .surface{
+    width:100%; max-width:480px;
+    background:linear-gradient(180deg, var(--glass), var(--glass-2));
+    border:1px solid var(--line); border-radius:20px; padding:22px;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,.6);
+  }
+
+  .target{
+    font-size:22px; line-height:1.7; letter-spacing:.01em;
+    min-height:70px; word-break:break-word; text-align:center;
+  }
+  .target .pending{ color:var(--faint); }
+  .target .correct{ color:var(--teal); }
+  .target .wrong{ color:var(--error); text-decoration:underline; text-decoration-color:var(--error-glow); }
+  .target .cursor{ display:inline-block; width:2px; height:1em; background:var(--teal); vertical-align:middle; animation:blink 1s step-end infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  .live-stats{
+    display:flex; justify-content:space-around; margin-top:16px; padding-top:14px;
+    border-top:1px solid var(--line); font-size:11px; color:var(--faint);
+  }
+  .live-stats b{ color:var(--muted); font-size:15px; display:block; }
+
+  .flash{
+    text-align:center; font-family:'Space Grotesk', sans-serif; font-size:12px;
+    color:var(--teal); min-height:18px; margin-top:10px; opacity:0; transition:opacity .2s ease;
+  }
+  .flash.show{ opacity:1; }
+  .flash.down{ color:var(--amber); }
+
+  .legend{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:18px; font-size:11px; color:var(--muted); }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .swatch{ width:8px; height:8px; border-radius:2px; display:inline-block; }
+  .swatch.teal{ background:var(--teal); } .swatch.error{ background:var(--error); }
+
+  .fingers{ position:relative; width:100%; height:min(115vw, 55vh); max-height:440px; margin-top:22px; }
+  .finger{
+    position:absolute; top:50%; left:50%;
+    width:22vw; height:22vw; max-width:100px; max-height:100px; min-width:64px; min-height:64px;
+    border-radius:20%; background:var(--glass-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-size:6vw; font-weight:700; color:var(--muted);
+    transition:transform .3s cubic-bezier(.34,1.35,.64,1), box-shadow .08s ease, border-color .08s ease;
+    touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; cursor:pointer;
+  }
+  .finger.active{ border-color:var(--teal); color:var(--ink); box-shadow:0 0 0 3px var(--teal-glow); transform:translate(-50%,-50%) scale(1.08) !important; }
+  .calibrate-overlay{
+    display:none; position:absolute; inset:0; background:rgba(10,12,22,.9); border-radius:16px;
+    align-items:center; justify-content:center; text-align:center; padding:20px;
+    font-family:'Space Grotesk', sans-serif; font-size:13px; color:var(--muted); z-index:10;
+  }
+  .calibrate-overlay.active{ display:flex; }
+
+  .bottom-controls{ display:flex; gap:8px; justify-content:center; margin-top:16px; }
+  .bottom-controls button{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; background:transparent; color:var(--muted);
+    border:1px solid var(--line); border-radius:8px; padding:7px 14px; cursor:pointer;
+  }
+
+  .prompt-overlay{
+    position:fixed; inset:0; z-index:30; display:flex; align-items:center; justify-content:center;
+    background:rgba(10,12,22,.88); text-align:center; padding:28px;
+    font-family:'Space Grotesk', sans-serif; font-size:14px; color:var(--muted); cursor:pointer;
+  }
+  .prompt-overlay b{ color:var(--ink); }
+  .exit-link{
+    position:fixed; top:10px; left:10px; z-index:20;
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+    color:var(--muted); text-decoration:none;
+    background:var(--glass-2); border:1px solid var(--line); border-radius:8px;
+    padding:6px 12px;
+  }
+</style>
+</head>
+<body>
+  <a class="exit-link" href="try-it-mobile.html">← Done</a>
+
+  <div class="eyebrow">Touchlinker · Hanon</div>
+  <h1>Nene — drill mode</h1>
+  <div class="status-row">
+    <div class="tier-badge" id="tierBadge">Tier 1 — short words</div>
+    <div class="streak">Streak <b id="streakCount">0</b></div>
+  </div>
+
+  <div class="surface">
+    <div class="target" id="target"></div>
+    <div class="live-stats">
+      <span><b id="liveWpm">0</b>WPM</span>
+      <span><b id="liveAcc">—</b>Accuracy</span>
+      <span><b id="liveCount">0</b>Completed</span>
+    </div>
+    <div class="flash" id="flash"></div>
+  </div>
+
+  <div class="legend">
+    <span><i class="swatch teal"></i>correct</span>
+    <span><i class="swatch error"></i>needs a fix</span>
+  </div>
+
+  <div class="fingers" id="fingersContainer">
+    <div class="finger" id="f1" data-key="v">V</div>
+    <div class="finger" id="f2" data-key="b">B</div>
+    <div class="finger" id="f3" data-key="n">N</div>
+    <div class="finger" id="f4" data-key="m">M</div>
+    <div class="calibrate-overlay" id="calibrateOverlay">
+      <div id="calibrateText">Tap where your index finger feels natural</div>
+    </div>
+  </div>
+
+  <div class="bottom-controls">
+    <button id="calibrateBtn">Calibrate to my hand</button>
+  </div>
+
+  <div class="prompt-overlay" id="overlay">Tap here, then rest your right hand's four fingers on <b>V&nbsp;B&nbsp;N&nbsp;M</b></div>
+
+<script>
+(function(){
+  // ── Decode core — identical to NT1/production, trimmed to letters +
+  // space + backspace + period. Drilling doesn't need digit mode or Alt.
+  const TAP_MAX = 0.25;
+  const FINGER_KEYS = { v:1, a:1, b:2, n:3, c:3, m:4, d:4 };
+  const ENCODING_MAP = {
+    A:{fingers:[1],mode:'tap'}, B:{fingers:[2],mode:'tap'}, C:{fingers:[3],mode:'tap'}, D:{fingers:[4],mode:'tap'},
+    E:{fingers:[1,2],mode:'tap'}, F:{fingers:[1,3],mode:'tap'}, G:{fingers:[1,4],mode:'tap'},
+    H:{fingers:[2,3],mode:'tap'}, I:{fingers:[2,4],mode:'tap'}, J:{fingers:[3,4],mode:'tap'},
+    K:{fingers:[1],mode:'touch'}, L:{fingers:[2],mode:'touch'}, M:{fingers:[3],mode:'touch'}, N:{fingers:[4],mode:'touch'},
+    O:{fingers:[1,2],mode:'touch'}, P:{fingers:[1,3],mode:'touch'}, Q:{fingers:[1,4],mode:'touch'},
+    R:{fingers:[2,3],mode:'touch'}, S:{fingers:[2,4],mode:'touch'}, T:{fingers:[3,4],mode:'touch'},
+    U:{ground:2,visitor:1,mode:'compound'}, V:{ground:3,visitor:1,mode:'compound'}, W:{ground:4,visitor:1,mode:'compound'},
+    X:{ground:3,visitor:2,mode:'compound'}, Y:{ground:4,visitor:2,mode:'compound'}, Z:{ground:4,visitor:3,mode:'compound'},
+    ' ':{ground:1,visitor:2,mode:'compound'}, '\b':{ground:1,visitor:3,mode:'compound'}, '.':{ground:3,visitor:4,mode:'compound'},
+  };
+  const fkey = (arr) => [...arr].sort((a,b)=>a-b).join(',');
+  const state = { pressTimes:{}, backTapDetected:{}, pendingChord:{} };
+
+  function findCharacter(fingers, mode){
+    const f = fkey(fingers);
+    for(const [char,p] of Object.entries(ENCODING_MAP)){
+      if(p.mode===mode && p.fingers && fkey(p.fingers)===f) return char;
+    }
+    return null;
+  }
+  function findCompound(ground, visitor){
+    for(const [char,p] of Object.entries(ENCODING_MAP)){
+      if(p.mode==='compound' && p.ground===ground && p.visitor===visitor) return char;
+    }
+    return null;
+  }
+  function onPress(k, now){
+    if(!(k in FINGER_KEYS)) return;
+    if(k in state.pressTimes) return;
+    state.pressTimes[k] = now;
+    setFingerVisual(FINGER_KEYS[k], true);
+    for(const [heldKey, heldTime] of Object.entries(state.pressTimes)){
+      if(heldKey===k) continue;
+      const held = now - heldTime;
+      if(0.05 < held && held < 0.375){ state.backTapDetected[k]=FINGER_KEYS[heldKey]; break; }
+    }
+  }
+  function resolveRelease(k, now){
+    if(!(k in FINGER_KEYS)) return;
+    if(!(k in state.pressTimes)) return;
+    const holdDuration = now - state.pressTimes[k];
+    delete state.pressTimes[k];
+    if(k in state.backTapDetected){
+      const groundFinger = state.backTapDetected[k];
+      delete state.backTapDetected[k];
+      const visitorFinger = FINGER_KEYS[k];
+      const char = findCompound(groundFinger, visitorFinger);
+      state.pendingChord = {};
+      Object.entries(FINGER_KEYS).filter(([,f])=>f===groundFinger).forEach(([gk])=>delete state.pressTimes[gk]);
+      if(char) onKeystroke(char);
+      return;
+    }
+    state.pendingChord[k] = { finger: FINGER_KEYS[k], duration: holdDuration };
+    const stillHeld = Object.keys(state.pressTimes).some(hk => hk in FINGER_KEYS);
+    if(stillHeld) return;
+    const fingers = [...new Set(Object.values(state.pendingChord).map(v=>v.finger))].sort((a,b)=>a-b);
+    const durations = Object.values(state.pendingChord).map(v=>v.duration);
+    const avg = durations.reduce((a,b)=>a+b,0)/durations.length;
+    state.pendingChord = {};
+    const mode = avg < TAP_MAX ? 'tap' : 'touch';
+    const char = findCharacter(fingers, mode);
+    if(char) onKeystroke(char);
+  }
+  function onRelease(k, now){
+    setFingerVisual(FINGER_KEYS[k], false);
+    setTimeout(() => resolveRelease(k, now), 40);
+  }
+  const fingerEls = { 1: document.getElementById('f1'), 2: document.getElementById('f2'), 3: document.getElementById('f3'), 4: document.getElementById('f4') };
+  function setFingerVisual(finger, active){ const el = fingerEls[finger]; if(el) el.classList.toggle('active', active); }
+
+  // ── Drill banks, four tiers ──────────────────────────────────────
+  // Tier 2 is deliberately loaded with i/s/y (Bill's flagged trouble
+  // cluster) rather than avoiding it -- the whole point of drilling is
+  // to spend time exactly where it's hardest, not where it's easy.
+  const TIERS = [
+    { label: 'Tier 1 — short words', items: ['the','cat','dog','run','fox','jump','over','lazy','type','fast','calm','hand'] },
+    { label: 'Tier 2 — the tricky cluster', items: ['sky','yes','spy','easy','wisdom','system','yikes','missy','sissy','yearly'] },
+    { label: 'Tier 3 — short phrases', items: ['the cat runs.','quick brown fox.','type it fast.','over the lazy dog.','five boxing wizards.'] },
+    { label: 'Tier 4 — pangrams', items: [
+        'the quick brown fox jumps over the lazy dog.',
+        'the five boxing wizards jump quickly.',
+        'pack my box with five dozen liquor jugs.',
+        'sphinx of black quartz judge my vow.',
+        'how vexingly quick daft zebras jump.'
+      ] },
+  ];
+
+  let tierIdx = 0;
+  let currentItem = '';
+  let cursorPos = 0;
+  let typed = [];
+  let firstKeyTime = null;
+  let errCountThisItem = 0;
+  let recentResults = []; // rolling window of {accuracy} for adaptive tiering
+  let streak = 0;
+  let completedCount = 0;
+
+  const targetEl = document.getElementById('target');
+  const tierBadge = document.getElementById('tierBadge');
+  const streakCountEl = document.getElementById('streakCount');
+  const liveWpmEl = document.getElementById('liveWpm');
+  const liveAccEl = document.getElementById('liveAcc');
+  const liveCountEl = document.getElementById('liveCount');
+  const flashEl = document.getElementById('flash');
+
+  function pickItem(){
+    const pool = TIERS[tierIdx].items;
+    currentItem = pool[Math.floor(Math.random()*pool.length)];
+    cursorPos = 0; typed = []; firstKeyTime = null; errCountThisItem = 0;
+    tierBadge.textContent = TIERS[tierIdx].label;
+    renderTarget();
+  }
+  function renderTarget(){
+    let html = '';
+    for(let i=0;i<currentItem.length;i++){
+      if(i < cursorPos){
+        const wasWrong = typed[i] && typed[i].wasWrong;
+        html += `<span class="${wasWrong?'wrong':'correct'}">${escapeHtml(currentItem[i])}</span>`;
+      } else if(i === cursorPos){
+        html += '<span class="cursor"></span>' + `<span class="pending">${escapeHtml(currentItem[i])}</span>`;
+      } else {
+        html += `<span class="pending">${escapeHtml(currentItem[i])}</span>`;
+      }
+    }
+    if(cursorPos >= currentItem.length) html += '<span class="cursor"></span>';
+    targetEl.innerHTML = html;
+  }
+  function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function updateLive(){
+    if(firstKeyTime && cursorPos > 0){
+      const elapsedMin = (performance.now()/1000 - firstKeyTime)/60;
+      const words = cursorPos/5;
+      liveWpmEl.textContent = elapsedMin>0 ? Math.round(words/elapsedMin) : 0;
+    }
+    liveCountEl.textContent = completedCount;
+  }
+  function flash(msg, down){
+    flashEl.textContent = msg;
+    flashEl.classList.toggle('down', !!down);
+    flashEl.classList.add('show');
+    clearTimeout(flash._t);
+    flash._t = setTimeout(()=>flashEl.classList.remove('show'), 1400);
+  }
+
+  function onKeystroke(char){
+    if(firstKeyTime === null) firstKeyTime = performance.now()/1000;
+    if(char === '\b'){
+      if(cursorPos > 0){ cursorPos--; typed.pop(); renderTarget(); updateLive(); }
+      return;
+    }
+    if(cursorPos >= currentItem.length) return;
+    const expected = currentItem[cursorPos];
+    const isCorrect = char.toLowerCase() === expected.toLowerCase();
+    if(!isCorrect) errCountThisItem++;
+    typed.push({ char, wasWrong: !isCorrect });
+    cursorPos++;
+    renderTarget(); updateLive();
+    if(cursorPos >= currentItem.length) finishItem();
+  }
+
+  function finishItem(){
+    const correctFirstTry = typed.filter(t=>!t.wasWrong).length;
+    const accuracy = Math.round((correctFirstTry/typed.length)*100);
+    liveAccEl.textContent = accuracy + '%';
+    completedCount++;
+
+    recentResults.push(accuracy);
+    if(recentResults.length > 3) recentResults.shift();
+
+    if(accuracy === 100) streak++; else streak = 0;
+    streakCountEl.textContent = streak;
+
+    // Adaptive tiering: 3 clean results in the rolling window escalates;
+    // a rough single result de-escalates. This is the actual sweet-spot
+    // mechanism -- neither stuck too easy nor pushed too hard.
+    if(recentResults.length === 3 && recentResults.every(a => a >= 90) && tierIdx < TIERS.length-1){
+      tierIdx++;
+      recentResults = [];
+      flash('Stepping up — ' + TIERS[tierIdx].label);
+    } else if(accuracy < 70 && tierIdx > 0){
+      tierIdx--;
+      recentResults = [];
+      flash('Easing back — ' + TIERS[tierIdx].label, true);
+    } else if(accuracy < 70){
+      flash('Rough one — same tier, try again', true);
+    } else {
+      flash(accuracy === 100 ? 'Clean.' : accuracy + '% — onward');
+    }
+
+    setTimeout(pickItem, 250); // brief beat, not a hard stop -- keeps rhythm continuous
+  }
+
+  // ── Hand calibration — identical mechanism to production ──────────
+  const CALIBRATION_KEY = 'nene_hand_calibration_v1';
+  const fingersContainer = document.getElementById('fingersContainer');
+  const calibrateBtn = document.getElementById('calibrateBtn');
+  const calibrateOverlay = document.getElementById('calibrateOverlay');
+  const calibrateText = document.getElementById('calibrateText');
+  const CALIBRATE_STEPS = ['index','middle','ring','little'];
+  let calibrating = false, calibrateStep = 0, calibratePositions = [];
+
+  function loadCalibration(){ try{ const raw = localStorage.getItem(CALIBRATION_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; } }
+  function saveCalibration(positions){ try{ localStorage.setItem(CALIBRATION_KEY, JSON.stringify(positions)); }catch(e){} }
+  function applyCalibration(){
+    const cal = loadCalibration();
+    if(!cal || cal.length !== 4) return;
+    cal.forEach((pos,i)=>{ const el=fingerEls[i+1]; if(!el) return; el.style.left=(pos.xFrac*100)+'%'; el.style.top=(pos.yFrac*100)+'%'; });
+  }
+  function startCalibration(){
+    calibrating = true; calibrateStep = 0; calibratePositions = [];
+    calibrateOverlay.classList.add('active');
+    calibrateText.textContent = `Tap where your ${CALIBRATE_STEPS[0]} finger feels natural`;
+  }
+  calibrateOverlay.addEventListener('click', (e) => {
+    if(!calibrating) return;
+    const rect = fingersContainer.getBoundingClientRect();
+    calibratePositions.push({ xFrac:(e.clientX-rect.left)/rect.width, yFrac:(e.clientY-rect.top)/rect.height });
+    calibrateStep++;
+    if(calibrateStep < 4){
+      calibrateText.textContent = `Tap where your ${CALIBRATE_STEPS[calibrateStep]} finger feels natural`;
+    } else {
+      saveCalibration(calibratePositions);
+      calibrateText.textContent = 'Saved — this is your layout now';
+      setTimeout(()=>{ calibrating=false; calibrateOverlay.classList.remove('active'); calibrateBtn.textContent='Recalibrate to my hand'; applyCalibration(); }, 900);
+    }
+  });
+  calibrateBtn.addEventListener('click', startCalibration);
+  if(loadCalibration()){ calibrateBtn.textContent = 'Recalibrate to my hand'; applyCalibration(); }
+
+  // ── Input wiring ───────────────────────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if(!(k in FINGER_KEYS)) return;
+    e.preventDefault();
+    if(e.repeat) return;
+    onPress(k, performance.now()/1000);
+  });
+  document.addEventListener('keyup', (e) => {
+    const k = e.key.toLowerCase();
+    if(!(k in FINGER_KEYS)) return;
+    e.preventDefault();
+    onRelease(k, performance.now()/1000);
+  });
+  const keyByFinger = {1:'v',2:'b',3:'n',4:'m'};
+  Object.entries(fingerEls).forEach(([fingerNum, el]) => {
+    const k = keyByFinger[fingerNum];
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); onPress(k, performance.now()/1000); });
+    el.addEventListener('pointerup', (e) => { e.preventDefault(); onRelease(k, performance.now()/1000); });
+    el.addEventListener('pointercancel', () => { onRelease(k, performance.now()/1000); });
+  });
+  document.getElementById('overlay').addEventListener('click', (e) => { e.currentTarget.style.display = 'none'; });
+
+  pickItem();
+})();
+</script>
+</body>
+</html>
