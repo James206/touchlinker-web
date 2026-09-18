@@ -543,6 +543,11 @@
 
   // ── Input wiring ───────────────────────────────────────────────
   document.addEventListener('keydown', (e) => {
+    // Never hijack a keystroke meant for a real form field (the alpha
+    // gate's password input, or any future text input) -- only the
+    // decode engine's own gesture keys should ever be intercepted here.
+    const active = document.activeElement;
+    if(active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
     const k = e.key.toLowerCase();
     if(!(k in FINGER_KEYS)) return;
     e.preventDefault();
