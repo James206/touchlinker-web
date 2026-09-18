@@ -522,7 +522,10 @@
 
     <div class="controls">
       <span class="hint">V=index · B=middle · N=ring · M=little</span>
-      <button id="clearBtn">Clear</button>
+      <div style="display:flex; gap:8px;">
+        <button id="shareBtn">Share this</button>
+        <button id="clearBtn">Clear</button>
+      </div>
     </div>
 
     <div class="help-modal" id="helpModal">
@@ -561,7 +564,7 @@
             <li><b>C</b> — comma</li>
             <li><b>X</b> — exclamation point</li>
             <li><b>CLEAR</b> — wipe everything typed so far</li>
-            <li><b>N</b> — NT1 (coming soon)</li>
+            <li><b>N</b> — open NT1 (phrase practice)</li>
           </ul>
           <p>Backspace works mid-word if you fumble a letter — nothing sends until you close with the second Alt.</p>
 
@@ -678,7 +681,7 @@
     T: () => { flashStatus('SHARING'); shareOutput(); },
     W: () => { flashStatus('OPENING WEB'); window.open('https://www.google.com', '_blank'); },
     H: () => { openHelp(); },
-    N: () => { flashStatus('NT1 — COMING SOON'); },
+    N: () => { flashStatus('OPENING NT1'); setTimeout(() => { window.location.href = 'nt1.html'; }, 300); },
     Q: () => { appendChar('?'); flashStatus('?'); },
     C: () => { appendChar(','); flashStatus(','); },
     X: () => { appendChar('!'); flashStatus('!'); },
@@ -879,6 +882,12 @@
   clearBtn.addEventListener('click', () => {
     clearOutput();
     outputEl.focus();
+  });
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    // Same real navigator.share() call as Alt-T-Alt, just reachable without
+    // already knowing the macro -- a first-time alpha tester should be able
+    // to see the real OS share sheet without learning gestures first.
+    shareOutput();
   });
 
   // ── Touch/tap support for phones and tablets ──────────────────────
