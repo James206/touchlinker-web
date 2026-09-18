@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Nene — NT1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -23,18 +23,26 @@
     --line:rgba(233,230,218,.08);
   }
   *{box-sizing:border-box; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
-  html,body{ height:100%; height:100dvh; margin:0; overscroll-behavior:none; width:100%; }
+  html,body{
+    height:100%; height:100dvh; margin:0; padding:0;
+    overscroll-behavior:none; width:100%;
+    position:fixed; inset:0;
+    overflow:hidden;
+  }
   body{
-    min-height:100%; min-height:100dvh;
-    overflow-y:auto;
     background:
       radial-gradient(ellipse 900px 500px at 50% -10%, #171d3d 0%, var(--void) 60%),
       var(--void);
     display:flex; flex-direction:column; align-items:center;
-    padding:clamp(12px,4vh,32px) 16px clamp(16px,5vh,48px);
+    padding:
+      max(clamp(8px,2vh,16px), env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(clamp(8px,2vh,16px), env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
     font-family:'IBM Plex Mono', monospace;
     color:var(--ink);
   }
+  .app-header{ flex:0 0 auto; width:100%; max-width:480px; }
   .eyebrow{
     font-family:'Space Grotesk', sans-serif;
     font-size:11px; letter-spacing:.14em; text-transform:uppercase;
@@ -45,16 +53,20 @@
     font-weight:700; font-size:22px; margin:0 0 6px;
   }
   .progress{
-    font-size:11px; color:var(--faint); margin-bottom:18px;
+    font-size:11px; color:var(--faint); margin-bottom:10px;
   }
   .progress b{ color:var(--muted); }
 
+  .app-main{
+    flex:0 1 auto; min-height:0; width:100%; max-width:480px;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+  }
   .surface{
-    width:100%; max-width:480px;
+    width:100%;
     background:linear-gradient(180deg, var(--glass), var(--glass-2));
     border:1px solid var(--line);
     border-radius:20px;
-    padding:22px;
+    padding:18px;
     box-shadow:0 30px 60px -30px rgba(0,0,0,.6);
   }
 
@@ -141,9 +153,10 @@
     padding:10px 20px; cursor:pointer;
   }
 
+  .app-footer{ flex:0 0 auto; width:100%; max-width:480px; }
   .legend{
     display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
-    margin-top:20px; font-size:11px; color:var(--muted);
+    margin-bottom:10px; font-size:11px; color:var(--muted);
   }
   .legend span{ display:flex; align-items:center; gap:6px; }
   .swatch{ width:8px; height:8px; border-radius:2px; display:inline-block; }
@@ -153,9 +166,9 @@
   .fingers{
     position:relative;
     width:100%;
-    height:min(115vw, 55vh);
-    max-height:440px;
-    margin-top:22px;
+    flex:1 1 auto;
+    min-height:120px;
+    margin:10px 0;
   }
   .finger{
     position:absolute;
@@ -199,7 +212,6 @@
 
   .bottom-controls{
     display:flex; gap:8px; justify-content:center;
-    margin-top:16px;
   }
   .bottom-controls button{
     font-family:'IBM Plex Mono', monospace;
@@ -220,44 +232,52 @@
     cursor:pointer;
   }
   .prompt-overlay b{ color:var(--ink); }
+  .exit-link{
+    position:fixed; top:10px; left:10px; z-index:20;
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+    color:var(--muted); text-decoration:none;
+    background:var(--glass-2); border:1px solid var(--line); border-radius:8px;
+    padding:6px 12px;
+  }
 </style>
 </head>
 <body>
 
-  <div class="eyebrow">Touchlinker · NT1</div>
-  <h1>Nene — phrase practice</h1>
-  <div class="progress">Phrase <b id="phraseNum">1</b> of <b id="phraseTotal">5</b></div>
+  <a class="exit-link" href="index.html">← Home</a>
 
-  <div class="surface">
-    <div class="tip" id="tip"></div>
-    <div class="target" id="target"></div>
-    <div class="live-stats">
-      <span>WPM <b id="liveWpm">0</b></span>
-      <span>Errors <b id="liveErrors">0</b></span>
-    </div>
-
-    <div class="summary" id="summary">
-      <div class="label">Words per minute</div>
-      <div class="big" id="sumWpm">0</div>
-      <div class="summary-row">
-        <div><div class="label">Accuracy</div><div class="big" id="sumAcc" style="font-size:20px;">0%</div></div>
-        <div><div class="label">Corrections</div><div class="big" id="sumErr" style="font-size:20px;">0</div></div>
-      </div>
-      <div class="note" id="sumTip"></div>
-      <button id="nextBtn">Next phrase</button>
-    </div>
-
-    <div class="final" id="final">
-      <h2>All five done</h2>
-      <p>Real pangrams — every letter of the alphabet, every phrase.</p>
-      <div id="finalRows"></div>
-      <button id="restartBtn">Practice again</button>
-    </div>
+  <div class="app-header">
+    <div class="eyebrow">Touchlinker · NT1</div>
+    <h1>Nene — phrase practice</h1>
+    <div class="progress">Phrase <b id="phraseNum">1</b> of <b id="phraseTotal">5</b></div>
   </div>
 
-  <div class="legend">
-    <span><i class="swatch teal"></i>typed correctly</span>
-    <span><i class="swatch amber"></i>needs a fix</span>
+  <div class="app-main">
+    <div class="surface">
+      <div class="tip" id="tip"></div>
+      <div class="target" id="target"></div>
+      <div class="live-stats">
+        <span>WPM <b id="liveWpm">0</b></span>
+        <span>Errors <b id="liveErrors">0</b></span>
+      </div>
+
+      <div class="summary" id="summary">
+        <div class="label">Words per minute</div>
+        <div class="big" id="sumWpm">0</div>
+        <div class="summary-row">
+          <div><div class="label">Accuracy</div><div class="big" id="sumAcc" style="font-size:20px;">0%</div></div>
+          <div><div class="label">Corrections</div><div class="big" id="sumErr" style="font-size:20px;">0</div></div>
+        </div>
+        <div class="note" id="sumTip"></div>
+        <button id="nextBtn">Next phrase</button>
+      </div>
+
+      <div class="final" id="final">
+        <h2>All five done</h2>
+        <p>Real pangrams — every letter of the alphabet, every phrase.</p>
+        <div id="finalRows"></div>
+        <button id="restartBtn">Practice again</button>
+      </div>
+    </div>
   </div>
 
   <div class="fingers" id="fingersContainer">
@@ -270,8 +290,14 @@
     </div>
   </div>
 
-  <div class="bottom-controls">
-    <button id="calibrateBtn">Calibrate to my hand</button>
+  <div class="app-footer">
+    <div class="legend">
+      <span><i class="swatch teal"></i>typed correctly</span>
+      <span><i class="swatch amber"></i>needs a fix</span>
+    </div>
+    <div class="bottom-controls">
+      <button id="calibrateBtn">Calibrate to my hand</button>
+    </div>
   </div>
 
   <div class="prompt-overlay" id="overlay">Tap here, then rest your right hand's four fingers on <b>V&nbsp;B&nbsp;N&nbsp;M</b></div>
@@ -521,55 +547,114 @@
     startPhrase(0);
   });
 
-  // ── Hand calibration — identical mechanism to try-it-mobile.html ──
-  const CALIBRATION_KEY = 'nene_hand_calibration_v1';
+  // ── Crescent layout: lower-left to upper-right diagonal sweep, concave bow ──
+  // Ported verbatim from try-it-mobile.html — nt1 was missing this entirely,
+  // which is why V/B/N/M rendered exactly on top of each other with no saved
+  // calibration: all four sat at the bare CSS default (top:50%, left:50%,
+  // no transform), so only the last one in DOM order (M) was ever visible.
   const fingersContainer = document.getElementById('fingersContainer');
+  const fingerOrder = [fingerEls[1], fingerEls[2], fingerEls[3], fingerEls[4]];
+
+  function layoutCrescent(){
+    const containerRect = fingersContainer.getBoundingClientRect();
+    const btnRect = fingerOrder[0].getBoundingClientRect();
+    const btnSize = btnRect.width;
+
+    const aspectAngle = -Math.atan2(containerRect.height, containerRect.width) * 180 / Math.PI;
+    const angleDeg = (aspectAngle * 0.65) + (-35 * 0.35);
+    const rad = angleDeg * Math.PI / 180;
+    const dx = Math.cos(rad), dy = Math.sin(rad);
+    const px = -dy, py = dx;
+
+    const spacing = btnSize * 1.55;
+    const bow = [btnSize*0.30, -btnSize*0.14, -btnSize*0.14, btnSize*0.30];
+
+    const positions = [0,1,2,3].map(i => {
+      const t = (i - 1.5) * spacing;
+      const b = bow[i];
+      return { x: t*dx + b*px, y: t*dy + b*py };
+    });
+
+    const xs = positions.map(p => Math.abs(p.x));
+    const ys = positions.map(p => Math.abs(p.y));
+    const maxX = Math.max(...xs) + btnSize/2;
+    const maxY = Math.max(...ys) + btnSize/2;
+    const scale = Math.min((containerRect.width/2 - 4) / maxX, (containerRect.height/2 - 4) / maxY);
+
+    fingerOrder.forEach((el, i) => {
+      const p = positions[i];
+      el.style.transform = `translate(-50%, -50%) translate(${(p.x*scale).toFixed(1)}px, ${(p.y*scale).toFixed(1)}px)`;
+    });
+  }
+
+  layoutCrescent();
+  window.addEventListener('resize', layoutCrescent);
+  window.addEventListener('orientationchange', () => setTimeout(layoutCrescent, 100));
+  // The fingers zone is now flex-sized (fills whatever space is left after
+  // the header/text area), so its pixel size can change from pure content
+  // reflow too, not just a window resize -- a ResizeObserver catches that.
+  if(window.ResizeObserver){
+    new ResizeObserver(() => layoutCrescent()).observe(fingersContainer);
+  }
+
+  // ── Hand calibration ────────────────────────────────────────────
+  // Same storage key AND same data format as try-it-mobile.html
+  // (percent-of-container, offset from center, applied as a transform) —
+  // calibrating on either page now works on both, rather than silently
+  // overwriting the other page's incompatible format under the same key.
+  const CALIBRATION_KEY = 'nene_hand_calibration_v1';
   const calibrateBtn = document.getElementById('calibrateBtn');
   const calibrateOverlay = document.getElementById('calibrateOverlay');
   const calibrateText = document.getElementById('calibrateText');
-  const CALIBRATE_STEPS = ['index','middle','ring','little'];
+  const fingerLabels = ['index', 'middle', 'ring', 'little'];
   let calibrating = false;
-  let calibrateStep = 0;
-  let calibratePositions = [];
+  let calibrationPoints = [];
 
   function loadCalibration(){
-    try{
+    try {
       const raw = localStorage.getItem(CALIBRATION_KEY);
-      if(!raw) return null;
-      return JSON.parse(raw);
-    }catch(e){ return null; }
-  }
-  function saveCalibration(positions){
-    try{ localStorage.setItem(CALIBRATION_KEY, JSON.stringify(positions)); }catch(e){}
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) { return null; }
   }
   function applyCalibration(){
-    const cal = loadCalibration();
-    if(!cal || cal.length !== 4) return;
-    cal.forEach((pos, i) => {
-      const el = fingerEls[i+1];
-      if(!el) return;
-      el.style.left = (pos.xFrac*100) + '%';
-      el.style.top = (pos.yFrac*100) + '%';
+    const saved = loadCalibration();
+    if(!saved) return false;
+    const containerRect = fingersContainer.getBoundingClientRect();
+    fingerOrder.forEach((el, i) => {
+      const p = saved[i];
+      const x = p.xPct * containerRect.width;
+      const y = p.yPct * containerRect.height;
+      el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
     });
+    return true;
   }
   function startCalibration(){
     calibrating = true;
-    calibrateStep = 0;
-    calibratePositions = [];
+    calibrationPoints = [];
     calibrateOverlay.classList.add('active');
-    calibrateText.textContent = `Tap where your ${CALIBRATE_STEPS[0]} finger feels natural`;
+    calibrateText.textContent = `Tap where your ${fingerLabels[0]} finger feels natural`;
+    calibrateBtn.textContent = 'Cancel calibration';
   }
-  calibrateOverlay.addEventListener('click', (e) => {
+  function cancelCalibration(){
+    calibrating = false;
+    calibrateOverlay.classList.remove('active');
+    calibrateBtn.textContent = loadCalibration() ? 'Recalibrate to my hand' : 'Calibrate to my hand';
+  }
+  calibrateOverlay.addEventListener('pointerdown', (e) => {
     if(!calibrating) return;
-    const rect = fingersContainer.getBoundingClientRect();
-    const xFrac = (e.clientX - rect.left) / rect.width;
-    const yFrac = (e.clientY - rect.top) / rect.height;
-    calibratePositions.push({ xFrac, yFrac });
-    calibrateStep++;
-    if(calibrateStep < 4){
-      calibrateText.textContent = `Tap where your ${CALIBRATE_STEPS[calibrateStep]} finger feels natural`;
+    e.preventDefault();
+    const containerRect = fingersContainer.getBoundingClientRect();
+    const cx = containerRect.left + containerRect.width/2;
+    const cy = containerRect.top + containerRect.height/2;
+    const xPct = (e.clientX - cx) / containerRect.width;
+    const yPct = (e.clientY - cy) / containerRect.height;
+    calibrationPoints.push({ xPct, yPct });
+
+    if(calibrationPoints.length < 4){
+      calibrateText.textContent = `Tap where your ${fingerLabels[calibrationPoints.length]} finger feels natural`;
     } else {
-      saveCalibration(calibratePositions);
+      try { localStorage.setItem(CALIBRATION_KEY, JSON.stringify(calibrationPoints)); }
+      catch(err) { /* private browsing or storage disabled */ }
       calibrateText.textContent = 'Saved — this is your layout now';
       setTimeout(() => {
         calibrating = false;
@@ -579,11 +664,16 @@
       }, 900);
     }
   });
-  calibrateBtn.addEventListener('click', startCalibration);
+  calibrateBtn.addEventListener('click', () => {
+    if(calibrating) cancelCalibration();
+    else startCalibration();
+  });
   if(loadCalibration()){
     calibrateBtn.textContent = 'Recalibrate to my hand';
     applyCalibration();
   }
+  window.addEventListener('resize', () => { if(!calibrating) applyCalibration(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { if(!calibrating) applyCalibration(); }, 100));
 
   // ── Input wiring — keyboard + touch, identical pattern to production ──
   document.addEventListener('keydown', (e) => {

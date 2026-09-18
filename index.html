@@ -483,6 +483,48 @@
             text-decoration: none;
         }
 
+        .try-it-block {
+            margin-bottom: 3rem;
+        }
+
+        .try-it-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--gray);
+            margin-bottom: 1.25rem;
+        }
+
+        .try-it-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .try-it-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.6rem 1.5rem;
+            border: 1px solid var(--navy);
+            color: var(--navy);
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .try-it-link:hover {
+            background: var(--navy);
+            color: var(--gold-light);
+        }
+
+        @media (max-width: 640px) {
+            .try-it-links { gap: 0.75rem; }
+            .try-it-link { padding: 0.55rem 1.1rem; font-size: 0.65rem; }
+        }
+
         /* CONTACT */
         .contact {
             padding: 8rem 4rem;
@@ -806,6 +848,17 @@
                     <div class="spec-label">Finger channels</div>
                 </div>
             </div>
+
+            <div class="try-it-block">
+                <p class="try-it-label">Try Nene™ — Tier 1</p>
+                <div class="try-it-links">
+                    <a href="try-it-mobile.html" class="try-it-link">Try It</a>
+                    <a href="nt1.html" class="try-it-link">NT1 · Phrase Practice</a>
+                    <a href="hanon.html" class="try-it-link">Hanon Drills</a>
+                    <a href="garden.html" class="try-it-link">Garden</a>
+                </div>
+            </div>
+
             <a href="#contact" class="coming-soon">nenetext.com — Coming Soon</a>
         </div>
     </section>

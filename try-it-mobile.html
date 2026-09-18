@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Nene — Tier 1a</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -29,14 +29,18 @@
   }
   body{
     min-height:100%; min-height:100dvh;
-    overflow-y:auto; /* genuine scroll stays possible as an escape hatch -- never trap the user with no way back to the typing surface */
+    overflow-y:auto; /* genuine scroll stays possible as an escape hatch -- never trap the user with no way back to the typing surface. This stays exactly as it was; the layout below is now sized to fit on its own so that hatch rarely needs to be used, not to replace it. */
     background:
       radial-gradient(ellipse 900px 500px at 50% -10%, #171d3d 0%, var(--void) 60%),
       var(--void);
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding:clamp(12px,4vh,36px) 16px clamp(16px,5vh,60px);
+    padding:
+      max(clamp(8px,2vh,20px), env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(clamp(10px,3vh,32px), env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
     font-family:'IBM Plex Mono', monospace;
     color:var(--ink);
   }
@@ -47,20 +51,23 @@
     text-transform:uppercase;
     color:var(--faint);
     margin-bottom:6px;
+    flex:0 0 auto;
   }
   h1{
     font-family:'Space Grotesk', sans-serif;
     font-weight:700;
     font-size:26px;
     margin:0 0 8px;
+    flex:0 0 auto;
   }
   .sub{
     color:var(--muted);
     font-size:13px;
-    margin-bottom:32px;
+    margin-bottom:16px;
     text-align:center;
     max-width:480px;
-    line-height:1.6;
+    line-height:1.5;
+    flex:0 0 auto;
   }
 
   .surface{
@@ -69,15 +76,19 @@
     background:linear-gradient(180deg, var(--glass), var(--glass-2));
     border:1px solid var(--line);
     border-radius:20px;
-    padding:28px;
+    padding:20px;
     box-shadow:0 30px 60px -30px rgba(0,0,0,.6);
+    display:flex;
+    flex-direction:column;
+    flex:1 1 auto;
+    min-height:0;
   }
 
   .mode-row{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:16px;
+    margin-bottom:8px;
   }
   .mode-badge{
     font-family:'Space Grotesk', sans-serif;
@@ -103,7 +114,7 @@
   .mode-hint{
     font-size:10px;
     color:var(--faint);
-    margin-bottom:14px;
+    margin-bottom:8px;
     text-align:center;
   }
 
@@ -112,10 +123,11 @@
   }
   .upper-panel{
     position:relative;
+    flex:0 0 auto;
   }
   .output{
-    min-height:160px;
-    max-height:280px;
+    min-height:90px;
+    max-height:240px;
     overflow-y:auto;
     background:rgba(0,0,0,.25);
     border:1px solid var(--line);
@@ -249,8 +261,9 @@
 
   .legend{
     display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
-    margin-top:22px;
+    margin-top:10px;
     font-size:11px; color:var(--muted);
+    flex:0 0 auto;
   }
   .legend span{ display:flex; align-items:center; gap:6px; }
   .swatch{ width:8px; height:8px; border-radius:2px; display:inline-block; }
@@ -260,9 +273,9 @@
   .fingers{
     position:relative;
     width:100%;
-    height:min(115vw, 55vh);
-    max-height:440px;
-    margin-top:20px;
+    flex:1 1 auto;
+    min-height:100px;
+    margin:12px 0;
   }
   .finger{
     position:absolute;
@@ -292,10 +305,11 @@
     box-shadow:0 0 0 4px var(--teal-glow);
   }
   .fingers-hint{
+    flex:0 0 auto;
     text-align:center;
     font-size:11px;
     color:var(--faint);
-    margin-top:8px;
+    margin-top:4px;
   }
   .calibrate-overlay{
     position:absolute;
@@ -315,6 +329,7 @@
   }
   .calibrate-overlay.active{ display:flex; }
   .cheat-toggle{
+    flex:0 0 auto;
     display:block;
     margin:16px auto 0;
     font-family:'IBM Plex Mono', monospace;
@@ -329,6 +344,7 @@
   }
   .cheat-toggle:hover{ color:var(--ink); border-color:var(--muted); }
   .cheat-sheet{
+    flex:0 0 auto;
     display:none;
     margin-top:14px;
     max-height:38vh;
@@ -401,8 +417,9 @@
   }
   .cheat-legend span{ display:flex; align-items:center; gap:4px; }
   .first-try{
-    margin-top:16px;
-    padding:12px 16px;
+    flex:0 0 auto;
+    margin-top:8px;
+    padding:8px 14px;
     background:rgba(69,199,184,.08);
     border:1px solid var(--teal-glow);
     border-radius:10px;
@@ -463,6 +480,13 @@
     cursor:pointer;
   }
   .lock-toggle.locked{ color:var(--teal); border-color:var(--teal-glow); }
+  .exit-link{
+    position:fixed; top:10px; left:10px; z-index:20;
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+    color:var(--muted); text-decoration:none;
+    background:var(--glass-2); border:1px solid var(--line); border-radius:8px;
+    padding:6px 12px;
+  }
   html.screen-locked, html.screen-locked body{
     touch-action:none;
     overscroll-behavior:none;
@@ -470,6 +494,8 @@
 </style>
 </head>
 <body>
+
+  <a class="exit-link" href="index.html">← Home</a>
 
   <div class="landscape-warning" id="landscapeWarning">
     Nene works in portrait only right now — rotate your phone back to keep typing.
@@ -958,6 +984,13 @@
   layoutCrescent();
   window.addEventListener('resize', layoutCrescent);
   window.addEventListener('orientationchange', () => setTimeout(layoutCrescent, 100));
+  // .fingers is now flex-grown to fill whatever space is left in .surface,
+  // so its pixel size can change from content elsewhere (cheat sheet
+  // opening, help modal, mode-hint text wrapping) -- not just a window
+  // resize. A ResizeObserver catches that; a plain resize listener won't.
+  if(window.ResizeObserver){
+    new ResizeObserver(() => layoutCrescent()).observe(fingersContainer);
+  }
 
   // ── Screen lock ──────────────────────────────────────────────────
   // Scroll/zoom stay fully adjustable until the user is actually ready
