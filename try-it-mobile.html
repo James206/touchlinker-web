@@ -491,9 +491,42 @@
     touch-action:none;
     overscroll-behavior:none;
   }
+
+  .alpha-gate{
+    position:fixed; inset:0; z-index:9999;
+    background:var(--void);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; padding:24px; text-align:center;
+    font-family:'IBM Plex Mono', monospace; color:var(--ink);
+  }
+  .alpha-gate.unlocked{ display:none; }
+  .alpha-gate h2{
+    font-family:'Space Grotesk', sans-serif; font-size:18px; margin:0;
+  }
+  .alpha-gate p{ font-size:12px; color:var(--muted); max-width:320px; margin:0; }
+  .alpha-gate input{
+    font-family:'IBM Plex Mono', monospace; font-size:14px;
+    background:var(--glass-2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); padding:10px 14px; width:220px; text-align:center;
+  }
+  .alpha-gate button{
+    font-family:'IBM Plex Mono', monospace; font-size:13px;
+    background:var(--teal); color:var(--void); border:none; border-radius:8px;
+    padding:10px 20px; cursor:pointer; font-weight:600;
+  }
+  .alpha-gate .err{ font-size:11px; color:#ff5c7a; min-height:14px; }
 </style>
 </head>
 <body>
+  <div class="alpha-gate" id="alphaGate">
+    <h2>Alpha access</h2>
+    <p>This page is a work-in-progress build shared with alpha testers only. Enter the password you were given.</p>
+    <input type="password" id="alphaPw" placeholder="Password" autocomplete="off">
+    <button id="alphaGo">Enter</button>
+    <div class="err" id="alphaErr"></div>
+  </div>
+
+
 
   <a class="exit-link" href="index.html">← Home</a>
 
@@ -600,6 +633,32 @@
   </div>
 
 <script>
+
+  // ── Alpha gate — a deliberate speed bump, not real security. Anyone who
+  // opens dev tools can read ALPHA_PASSWORD below; this exists to keep
+  // casual visitors and search engines out, not to defend against someone
+  // determined to bypass it. Change the password below before sharing.
+  (function(){
+    const ALPHA_PASSWORD = 'alpha2026';
+    const SESSION_KEY = 'nene_alpha_unlocked';
+    const gate = document.getElementById('alphaGate');
+    if(sessionStorage.getItem(SESSION_KEY) === 'yes'){ gate.classList.add('unlocked'); return; }
+    const pwInput = document.getElementById('alphaPw');
+    const goBtn = document.getElementById('alphaGo');
+    const errEl = document.getElementById('alphaErr');
+    function tryUnlock(){
+      if(pwInput.value === ALPHA_PASSWORD){
+        try{ sessionStorage.setItem(SESSION_KEY, 'yes'); }catch(e){}
+        gate.classList.add('unlocked');
+      } else {
+        errEl.textContent = 'Not quite -- try again.';
+        pwInput.value = '';
+        pwInput.focus();
+      }
+    }
+    goBtn.addEventListener('click', tryUnlock);
+    pwInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') tryUnlock(); });
+  })();
 (function(){
   // ── Decode core — faithful port of nenesen.py, verified against 26 test cases ──
   const TAP_MAX = 0.25;
