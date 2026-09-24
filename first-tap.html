@@ -230,6 +230,28 @@
   vBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); onDown(); });
   vBtn.addEventListener('pointerup', (e) => { e.preventDefault(); onUp(); });
   vBtn.addEventListener('pointerleave', () => { pressStart = null; vBtn.classList.remove('active'); });
+
+  // Physical keyboard support (Mac/PC) -- V is the real key, A is the same
+  // finger-1 alias used everywhere else on the site. Guarded against a
+  // focused text input (the alpha gate's password field) for the same
+  // reason nt1/hanon/garden needed the same guard earlier today.
+  document.addEventListener('keydown', (e) => {
+    const active = document.activeElement;
+    if(active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+    const k = e.key.toLowerCase();
+    if(k !== 'v' && k !== 'a') return;
+    e.preventDefault();
+    if(e.repeat) return; // ignore key-repeat while held -- only the real press/release matter
+    onDown();
+  });
+  document.addEventListener('keyup', (e) => {
+    const active = document.activeElement;
+    if(active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+    const k = e.key.toLowerCase();
+    if(k !== 'v' && k !== 'a') return;
+    e.preventDefault();
+    onUp();
+  });
 </script>
 
 </body>
