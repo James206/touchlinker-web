@@ -310,12 +310,12 @@
 
 
 
-  <a class="exit-link" href="index.html">← Home</a>
+  <a class="exit-link" href="index.html#nene">← Home</a>
 
   <div class="app-header">
     <div class="eyebrow">Touchlinker · NT1</div>
     <h1>Nene — phrase practice</h1>
-    <div class="progress">Phrase <b id="phraseNum">1</b> of <b id="phraseTotal">5</b></div>
+    <div class="progress">Phrase <b id="phraseNum">1</b> of <b id="phraseTotal">5</b> <span id="altIndicator" style="display:none; color:var(--teal); margin-left:8px;">● hold B, tap N again for next</span></div>
   </div>
 
   <div class="app-main">
@@ -475,10 +475,15 @@
       const groundFinger = state.backTapDetected[k];
       delete state.backTapDetected[k];
       const visitorFinger = FINGER_KEYS[k];
-      const char = findCompound(groundFinger, visitorFinger);
       state.pendingChord = {};
       Object.entries(FINGER_KEYS).filter(([,f])=>f===groundFinger).forEach(([gk])=>delete state.pressTimes[gk]);
-      if(char) onKeystroke(char);
+
+      if(groundFinger === 2 && visitorFinger === 3){ // hold B, tap N -- same gesture as Alt everywhere else in Nene
+        handleMiniAlt();
+        return;
+      }
+      const char = findCompound(groundFinger, visitorFinger);
+      dispatchChar(char);
       return;
     }
 
@@ -492,7 +497,7 @@
     state.pendingChord = {};
     const mode = avg < TAP_MAX ? 'tap' : 'touch';
     const char = findCharacter(fingers, mode);
-    if(char) onKeystroke(char);
+    dispatchChar(char);
   }
 
   function onRelease(k, now){
@@ -646,13 +651,48 @@
     summaryEl.classList.add('active');
   }
 
-  document.getElementById('nextBtn').addEventListener('click', () => {
+  // ── Mini-Alt: hold B, tap N -- the same gesture that opens the full
+  // Alt system on try-it-mobile.html, kept meaning exactly what it means
+  // there ("open a mode"), just with almost nothing inside it here. NT1
+  // has no macro words to buffer, so the only thing this mode does is:
+  // close it again with nothing typed in between (Alt, Alt) and that's
+  // Enter -- which here means "next phrase," since there's no freeform
+  // text to send. If a real letter gets typed while it's open, closing
+  // just exits without advancing, rather than risking an accidental skip.
+  let miniAltOpen = false;
+  let miniAltHadInput = false;
+  const altIndicator = document.getElementById('altIndicator');
+
+  function handleMiniAlt(){
+    if(!miniAltOpen){
+      miniAltOpen = true;
+      miniAltHadInput = false;
+      altIndicator.style.display = 'inline';
+    } else {
+      miniAltOpen = false;
+      altIndicator.style.display = 'none';
+      // Only actually advance if a phrase is genuinely done and waiting on
+      // Next -- same condition the button itself is only shown under, so
+      // the gesture can't accidentally skip a phrase that's still in progress.
+      if(!miniAltHadInput && summaryEl.classList.contains('active')) advancePhrase();
+    }
+  }
+
+  function dispatchChar(char){
+    if(!char) return;
+    if(miniAltOpen){ miniAltHadInput = true; return; } // swallow -- don't let it land in the phrase attempt
+    onKeystroke(char);
+  }
+
+  function advancePhrase(){
     if(phraseIdx + 1 < PHRASES.length){
       startPhrase(phraseIdx + 1);
     } else {
       showFinal();
     }
-  });
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', advancePhrase);
 
   function showFinal(){
     summaryEl.classList.remove('active');
