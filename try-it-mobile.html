@@ -258,6 +258,13 @@
     transition:all .15s ease;
   }
   button:hover{ color:var(--ink); border-color:var(--muted); }
+  #shareBtn.pulse, #speakBtn.pulse{
+    animation: sharePulse 0.6s ease-in-out 3;
+    border-color: var(--teal); color: var(--teal);
+  }
+  @keyframes sharePulse{
+    50%{ box-shadow: 0 0 0 4px var(--teal-glow); }
+  }
 
   .legend{
     display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
@@ -280,6 +287,7 @@
   .finger{
     position:absolute;
     top:50%; left:50%;
+    z-index:15;
     width:22vw; height:22vw;
     max-width:100px; max-height:100px;
     min-width:64px; min-height:64px;
@@ -312,13 +320,14 @@
     margin-top:4px;
   }
   .calibrate-overlay{
-    position:absolute;
+    position:fixed;
     inset:0;
+    z-index:60;
     display:none;
     align-items:center;
     justify-content:center;
-    background:rgba(10,12,22,.9);
-    border-radius:12px;
+    background:rgba(10,12,22,.92);
+    border-radius:0;
     text-align:center;
     padding:20px;
     font-family:'Space Grotesk', sans-serif;
@@ -556,6 +565,7 @@
     <div class="controls">
       <span class="hint">V=index · B=middle · N=ring · M=little</span>
       <div style="display:flex; gap:8px;">
+        <button id="speakBtn">Speak this</button>
         <button id="shareBtn">Share this</button>
         <button id="clearBtn">Clear</button>
       </div>
@@ -590,7 +600,8 @@
           <h3>Alt — everything else lives here</h3>
           <p>Touch B, tap N to open Alt. Tap Alt again right away for <b>Enter</b>. Or type a word first (T, W, H, Q, C, X, N, CLEAR so far), then close with Alt again to run it:</p>
           <ul>
-            <li><b>T</b> — share what you typed (text, email, anywhere)</li>
+            <li><b>T</b> — highlights the "Share this" button below; tap it to send what you typed (text, email, anywhere)</li>
+            <li><b>P</b> — highlights the "Speak this" button below; tap it to hear what you typed read back</li>
             <li><b>W</b> — open a web tab</li>
             <li><b>H</b> — this primer</li>
             <li><b>Q</b> — question mark</li>
@@ -737,7 +748,33 @@
   }
 
   const ALT_MACROS = {
-    T: () => { flashStatus('SHARING'); shareOutput(); },
+    T: () => {
+      // navigator.share() requires a fresh, direct tap -- this macro
+      // completes several steps deep in the async gesture-resolution
+      // chain (the deliberate 40ms setTimeout in onRelease breaks the
+      // browser's "real user gesture" requirement on mobile, even
+      // though it's needed for correct chord timing). So instead of
+      // calling share directly, point at the real button and let that
+      // tap -- a genuine, fresh click -- do it.
+      if(!outputText.trim()){ flashStatus('TYPE SOMETHING FIRST'); return; }
+      flashStatus('TAP "SHARE THIS" BELOW');
+      const btn = document.getElementById('shareBtn');
+      btn.classList.remove('pulse');
+      requestAnimationFrame(() => btn.classList.add('pulse'));
+      setTimeout(() => btn.classList.remove('pulse'), 1900);
+    },
+    P: () => {
+      // Same reasoning as T -- speechSynthesis is less strict about needing
+      // a fresh gesture than navigator.share(), but "less strict" isn't
+      // "guaranteed," and today already showed what happens when that's
+      // assumed rather than checked. Hand off to a real click instead.
+      if(!outputText.trim()){ flashStatus('TYPE SOMETHING FIRST'); return; }
+      flashStatus('TAP "SPEAK THIS" BELOW');
+      const btn = document.getElementById('speakBtn');
+      btn.classList.remove('pulse');
+      requestAnimationFrame(() => btn.classList.add('pulse'));
+      setTimeout(() => btn.classList.remove('pulse'), 1900);
+    },
     W: () => { flashStatus('OPENING WEB'); window.open('https://www.google.com', '_blank'); },
     H: () => { openHelp(); },
     N: () => { flashStatus('OPENING NT1'); setTimeout(() => { window.location.href = 'nt1.html'; }, 300); },
@@ -948,6 +985,13 @@
     // to see the real OS share sheet without learning gestures first.
     shareOutput();
   });
+  document.getElementById('speakBtn').addEventListener('click', () => {
+    if(!outputText.trim()){ flashStatus('TYPE SOMETHING FIRST'); return; }
+    if(!('speechSynthesis' in window)){ flashStatus('SPEECH NOT SUPPORTED HERE'); return; }
+    window.speechSynthesis.cancel(); // don't queue up behind a previous read
+    const utter = new SpeechSynthesisUtterance(outputText);
+    window.speechSynthesis.speak(utter);
+  });
 
   // ── Touch/tap support for phones and tablets ──────────────────────
   // Feeds the exact same onPress/onRelease pipeline physical keys use —
@@ -1106,10 +1150,21 @@
   helpModal.addEventListener('click', (e) => { if(e.target === helpModal) closeHelp(); });
 
   // ── Hand calibration ────────────────────────────────────────────
-  // Positions stored as fractions of container width/height, offset from
-  // center — resolution-independent, so a calibration done here still
-  // lines up correctly after rotation or reload.
-  const CALIBRATION_KEY = 'nene_hand_calibration_v1';
+  // Full-screen calibration: a tap can land ANYWHERE on the real screen,
+  // not just inside the surface card. Positions are stored as plain
+  // fractions of the true viewport (0-1 from the top-left corner) and
+  // applied with position:fixed, so a calibrated finger can sit flush
+  // against a real screen edge -- necessary for grips like fretting a
+  // PopSocket, where fingers land nowhere near the centered crescent.
+  //
+  // This uses its own storage key, separate from the crescent-mode key
+  // NT1 and Hanon still share (nene_hand_calibration_v1) -- the geometry
+  // here is fundamentally different (absolute screen position vs. an
+  // offset from a container's center), so reusing the same key would
+  // silently misplace anyone's existing crescent calibration. That does
+  // mean calibrating here no longer carries over to NT1/Hanon the way it
+  // used to; those two pages are unaffected and still share theirs.
+  const CALIBRATION_KEY = 'nene_hand_calibration_fullscreen_v1';
   const calibrateBtn = document.getElementById('calibrateBtn');
   const calibrateOverlay = document.getElementById('calibrateOverlay');
   const calibrateText = document.getElementById('calibrateText');
@@ -1127,12 +1182,12 @@
   function applyCalibration(){
     const saved = loadCalibration();
     if(!saved) return false;
-    const containerRect = fingersContainer.getBoundingClientRect();
     fingerOrder.forEach((el, i) => {
       const p = saved[i];
-      const x = p.xPct * containerRect.width;
-      const y = p.yPct * containerRect.height;
-      el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+      el.style.position = 'fixed';
+      el.style.left = (p.xFrac * 100) + '%';
+      el.style.top = (p.yFrac * 100) + '%';
+      el.style.transform = 'translate(-50%, -50%)'; // percentages are true viewport %, since position:fixed's containing block is the viewport
     });
     return true;
   }
@@ -1141,7 +1196,7 @@
     calibrating = true;
     calibrationPoints = [];
     calibrateOverlay.classList.add('active');
-    calibrateText.textContent = `Tap where your ${fingerLabels[0]} finger feels natural`;
+    calibrateText.textContent = `Tap anywhere on screen where your ${fingerLabels[0]} finger feels natural`;
     calibrateBtn.textContent = 'Cancel calibration';
   }
 
@@ -1154,15 +1209,12 @@
   calibrateOverlay.addEventListener('pointerdown', (e) => {
     if(!calibrating) return;
     e.preventDefault();
-    const containerRect = fingersContainer.getBoundingClientRect();
-    const cx = containerRect.left + containerRect.width/2;
-    const cy = containerRect.top + containerRect.height/2;
-    const xPct = (e.clientX - cx) / containerRect.width;
-    const yPct = (e.clientY - cy) / containerRect.height;
-    calibrationPoints.push({ xPct, yPct });
+    const xFrac = e.clientX / window.innerWidth;
+    const yFrac = e.clientY / window.innerHeight;
+    calibrationPoints.push({ xFrac, yFrac });
 
     if(calibrationPoints.length < 4){
-      calibrateText.textContent = `Tap where your ${fingerLabels[calibrationPoints.length]} finger feels natural`;
+      calibrateText.textContent = `Tap anywhere on screen where your ${fingerLabels[calibrationPoints.length]} finger feels natural`;
     } else {
       try { localStorage.setItem(CALIBRATION_KEY, JSON.stringify(calibrationPoints)); }
       catch(err) { /* private browsing or storage disabled — calibration just won't persist */ }
@@ -1188,8 +1240,9 @@
     applyCalibration();
     setLocked(true); // a saved calibration means position was already confirmed in a prior session
   }
-  window.addEventListener('resize', () => { if(!calibrating) applyCalibration(); });
-  window.addEventListener('orientationchange', () => setTimeout(() => { if(!calibrating) applyCalibration(); }, 100));
+  // No resize/orientationchange re-apply needed anymore -- percentage-based
+  // position:fixed placement adjusts automatically via CSS as the viewport
+  // changes, with nothing for JS to recompute.
 
   // ── Cheat sheet — built directly from ENCODING_MAP, the same data the
   // decode logic actually uses, so this can never silently drift out of

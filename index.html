@@ -515,7 +515,17 @@
             transition: background 0.2s, color 0.2s;
         }
 
-        .try-it-link:hover {
+        .try-it-link.start {
+            background: var(--navy);
+            color: var(--gold);
+            border-color: var(--navy);
+        }
+        .try-it-link.start:hover {
+            background: var(--gold);
+            color: var(--navy);
+            border-color: var(--gold);
+        }
+
             background: var(--navy);
             color: var(--gold-light);
         }
@@ -852,6 +862,7 @@
             <div class="try-it-block">
                 <p class="try-it-label">Try Nene™ — Tier 1</p>
                 <div class="try-it-links">
+                    <a href="first-tap.html" class="try-it-link start">Start Here</a>
                     <a href="try-it-mobile.html" class="try-it-link">Try It</a>
                     <a href="nt1.html" class="try-it-link">NT1 · Phrase Practice</a>
                     <a href="hanon.html" class="try-it-link">Hanon Drills</a>

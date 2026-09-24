@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Nene — first tap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0a0c16;
+    --glass:#11142a;
+    --glass-2:#161a36;
+    --ink:#eae6da;
+    --muted:#8891b8;
+    --faint:#565f8c;
+    --teal:#3b82f6;
+    --teal-glow:rgba(59,130,246,.35);
+    --line:rgba(233,230,218,.08);
+  }
+  *{box-sizing:border-box; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
+  html,body{
+    height:100%; height:100dvh; margin:0; padding:0;
+    overscroll-behavior:none; width:100%;
+    position:fixed; inset:0;
+    overflow:hidden;
+  }
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, #171d3d 0%, var(--void) 60%),
+      var(--void);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:
+      max(16px, env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+    font-family:'IBM Plex Mono', monospace; color:var(--ink);
+    text-align:center;
+  }
+  .exit-link{
+    position:fixed; top:10px; left:10px; z-index:20;
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+    color:var(--muted); text-decoration:none;
+    background:var(--glass-2); border:1px solid var(--line); border-radius:8px;
+    padding:6px 12px;
+  }
+  .invite{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px;
+    color:var(--muted);
+    max-width:320px;
+    line-height:1.6;
+    margin-bottom:28px;
+    transition:opacity .3s ease;
+  }
+  .sequence{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:clamp(28px, 9vw, 44px);
+    letter-spacing:.08em;
+    min-height:1.3em;
+    margin-bottom:36px;
+    color:var(--ink);
+  }
+  .sequence .a{ color:var(--teal); }
+  .sequence .k{ color:#f2a65a; }
+  .btn-wrap{ position:relative; margin-bottom:8px; }
+  .v-btn{
+    width:min(42vw, 200px); height:min(42vw, 200px);
+    border-radius:24%;
+    background:var(--glass-2);
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:clamp(32px, 12vw, 56px);
+    font-weight:700;
+    color:var(--muted);
+    transition:transform .15s ease, box-shadow .1s ease, border-color .1s ease;
+    touch-action:none; cursor:pointer;
+  }
+  .v-btn.active{
+    border-color:var(--teal);
+    color:var(--ink);
+    box-shadow:0 0 0 6px var(--teal-glow);
+  }
+  .hint{
+    font-size:11px; color:var(--faint); margin-top:18px;
+  }
+  .celebrate{
+    display:none;
+    flex-direction:column; align-items:center;
+    animation:fadeIn .4s ease;
+  }
+  .celebrate.active{ display:flex; }
+  .celebrate h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:22px; margin:0 0 8px; color:var(--teal);
+  }
+  .celebrate p{ font-size:13px; color:var(--muted); max-width:300px; line-height:1.6; margin:0 0 20px; }
+  .celebrate a{
+    font-family:'IBM Plex Mono', monospace; font-size:12px;
+    color:var(--void); background:var(--teal);
+    text-decoration:none; padding:10px 20px; border-radius:8px; font-weight:600;
+  }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  .alpha-gate{
+    position:fixed; inset:0; z-index:9999;
+    background:var(--void);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; padding:24px; text-align:center;
+    font-family:'IBM Plex Mono', monospace; color:var(--ink);
+  }
+  .alpha-gate.unlocked{ display:none; }
+  .alpha-gate h2{
+    font-family:'Space Grotesk', sans-serif; font-size:18px; margin:0;
+  }
+  .alpha-gate p{ font-size:12px; color:var(--muted); max-width:320px; margin:0; }
+  .alpha-gate input{
+    font-family:'IBM Plex Mono', monospace; font-size:14px;
+    background:var(--glass-2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); padding:10px 14px; width:220px; text-align:center;
+  }
+  .alpha-gate button{
+    font-family:'IBM Plex Mono', monospace; font-size:13px;
+    background:var(--teal); color:var(--void); border:none; border-radius:8px;
+    padding:10px 20px; cursor:pointer; font-weight:600;
+  }
+  .alpha-gate .err{ font-size:11px; color:#ff5c7a; min-height:14px; }
+</style>
+</head>
+<body>
+  <div class="alpha-gate" id="alphaGate">
+    <h2>Alpha access</h2>
+    <p>This page is a work-in-progress build shared with alpha testers only. Enter the password you were given.</p>
+    <input type="password" id="alphaPw" placeholder="Password" autocomplete="off">
+    <button id="alphaGo">Enter</button>
+    <div class="err" id="alphaErr"></div>
+  </div>
+
+
+
+  <a class="exit-link" href="index.html">← Home</a>
+
+  <div id="playArea">
+    <p class="invite" id="invite">One button. Tap it quickly for <b style="color:var(--teal)">A</b>. Press and hold it for <b style="color:#f2a65a">K</b>. That's the whole game.</p>
+    <div class="sequence" id="sequence"></div>
+    <div class="btn-wrap">
+      <div class="v-btn" id="vBtn">V</div>
+    </div>
+    <p class="hint">quick tap = A &nbsp;·&nbsp; hold = K</p>
+  </div>
+
+  <div class="celebrate" id="celebrate">
+    <h2>You did it!! 🎉</h2>
+    <p>That's the same real system behind everything else here — just one finger instead of four. Ready to try a real word?</p>
+    <a href="nt1.html">Try NT1 →</a>
+  </div>
+
+<script>
+
+  // ── Alpha gate — a deliberate speed bump, not real security. ──
+  (function(){
+    const ALPHA_PASSWORD = 'alpha2026';
+    const SESSION_KEY = 'nene_alpha_unlocked';
+    const gate = document.getElementById('alphaGate');
+    if(sessionStorage.getItem(SESSION_KEY) === 'yes'){ gate.classList.add('unlocked'); return; }
+    const pwInput = document.getElementById('alphaPw');
+    const goBtn = document.getElementById('alphaGo');
+    const errEl = document.getElementById('alphaErr');
+    function tryUnlock(){
+      if(pwInput.value === ALPHA_PASSWORD){
+        try{ sessionStorage.setItem(SESSION_KEY, 'yes'); }catch(e){}
+        gate.classList.add('unlocked');
+      } else {
+        errEl.textContent = 'Not quite -- try again.';
+        pwInput.value = '';
+        pwInput.focus();
+      }
+    }
+    goBtn.addEventListener('click', tryUnlock);
+    pwInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') tryUnlock(); });
+  })();
+  const TAP_MAX = 0.25; // seconds -- same threshold as the real decode engine
+  const GOAL = 6; // "AKAKAK"
+
+  const vBtn = document.getElementById('vBtn');
+  const sequenceEl = document.getElementById('sequence');
+  const inviteEl = document.getElementById('invite');
+  const playArea = document.getElementById('playArea');
+  const celebrate = document.getElementById('celebrate');
+
+  let pressStart = null;
+  let sequence = [];
+
+  function render(){
+    sequenceEl.innerHTML = sequence.map(c =>
+      c === 'A' ? '<span class="a">A</span>' : '<span class="k">K</span>'
+    ).join('');
+  }
+
+  function onDown(){
+    pressStart = performance.now() / 1000;
+    vBtn.classList.add('active');
+  }
+
+  function onUp(){
+    if(pressStart === null) return;
+    const held = (performance.now() / 1000) - pressStart;
+    pressStart = null;
+    vBtn.classList.remove('active');
+
+    const letter = held < TAP_MAX ? 'A' : 'K';
+    sequence.push(letter);
+    render();
+
+    if(sequence.length === 1){
+      inviteEl.style.opacity = '0';
+    }
+
+    if(sequence.length >= GOAL){
+      setTimeout(() => {
+        playArea.style.display = 'none';
+        celebrate.classList.add('active');
+      }, 500);
+    }
+  }
+
+  vBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); onDown(); });
+  vBtn.addEventListener('pointerup', (e) => { e.preventDefault(); onUp(); });
+  vBtn.addEventListener('pointerleave', () => { pressStart = null; vBtn.classList.remove('active'); });
+</script>
+
+</body>
+</html>
