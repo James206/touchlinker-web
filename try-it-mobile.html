@@ -283,7 +283,7 @@
     position:relative;
     width:100%;
     flex:1 1 auto;
-    min-height:100px;
+    min-height:100px; /* true last-resort floor only -- layoutCrescent() below raises this dynamically to whatever the CURRENT button size actually needs, since a flat number can't serve both a small phone and a wide desktop with large buttons */
     margin:12px 0;
   }
   .finger{
@@ -1056,9 +1056,25 @@
   const fingerOrder = [fingerEls[1], fingerEls[2], fingerEls[3], fingerEls[4]];
 
   function layoutCrescent(){
-    const containerRect = fingersContainer.getBoundingClientRect();
     const btnRect = fingerOrder[0].getBoundingClientRect();
     const btnSize = btnRect.width;
+
+    // Only the cheat sheet's own content genuinely needs to steal room from
+    // the crescent -- everywhere else, behavior stays exactly as it was.
+    // (Querying the DOM directly rather than referencing the `cheatSheet`
+    // variable, since that's declared later in the script and this runs
+    // once immediately on page load, before that declaration exists yet.)
+    const cheatSheetOpen = document.getElementById('cheatSheet').classList.contains('open');
+    if(cheatSheetOpen){
+      const neededMinHeight = btnSize * 4;
+      if(fingersContainer.getBoundingClientRect().height < neededMinHeight){
+        fingersContainer.style.minHeight = neededMinHeight + 'px';
+      }
+    } else {
+      fingersContainer.style.minHeight = ''; // back to the CSS default when the cheat sheet isn't the thing competing for space
+    }
+
+    const containerRect = fingersContainer.getBoundingClientRect(); // re-measure -- the min-height above may have just changed it
 
     // Lean the diagonal's steepness toward whichever dimension the screen actually
     // has more of — portrait (tall, narrow) gets a steeper sweep so it uses height
