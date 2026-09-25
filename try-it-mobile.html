@@ -631,6 +631,7 @@
     </div>
     <div class="fingers-hint">On a phone or tablet, tap these directly — same as pressing V B N M on a keyboard</div>
     <button id="calibrateBtn" class="cheat-toggle">Calibrate to my hand</button>
+    <button id="resetCalibrationBtn" class="cheat-toggle" style="display:none;">Reset to default</button>
 
     <div class="first-try">
       <span class="first-try-label">Try this first:</span>
@@ -1233,6 +1234,7 @@
         calibrating = false;
         calibrateOverlay.classList.remove('active');
         calibrateBtn.textContent = 'Recalibrate to my hand';
+        resetCalibrationBtn.style.display = 'inline-block';
         applyCalibration();
         setLocked(true); // position just confirmed — lock it in, adjustable anytime via the toggle
       }, 900);
@@ -1244,9 +1246,32 @@
     else startCalibration();
   });
 
+  const resetCalibrationBtn = document.getElementById('resetCalibrationBtn');
+
+  function resetCalibration(){
+    try { localStorage.removeItem(CALIBRATION_KEY); } catch(e) {}
+    // Undo everything applyCalibration() did: give each finger back its
+    // default absolute positioning so the crescent math can take over
+    // again, and give .fingers back the space it collapsed out of.
+    fingerOrder.forEach(el => {
+      el.style.position = '';
+      el.style.left = '';
+      el.style.top = '';
+      el.style.transform = '';
+    });
+    fingersContainer.style.flex = '';
+    fingersContainer.style.minHeight = '';
+    fingersContainer.style.margin = '';
+    layoutCrescent();
+    calibrateBtn.textContent = 'Calibrate to my hand';
+    resetCalibrationBtn.style.display = 'none';
+  }
+  resetCalibrationBtn.addEventListener('click', resetCalibration);
+
   // On load: use a saved calibration if one exists; otherwise the computed crescent stands as-is.
   if(loadCalibration()){
     calibrateBtn.textContent = 'Recalibrate to my hand';
+    resetCalibrationBtn.style.display = 'inline-block';
     applyCalibration();
     setLocked(true); // a saved calibration means position was already confirmed in a prior session
   }
