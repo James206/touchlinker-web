@@ -1055,55 +1055,31 @@
   const fingersContainer = document.querySelector('.fingers');
   const fingerOrder = [fingerEls[1], fingerEls[2], fingerEls[3], fingerEls[4]];
 
-  function layoutCrescent(){
-    const btnRect = fingerOrder[0].getBoundingClientRect();
-    const btnSize = btnRect.width;
-
-    // Only the cheat sheet's own content genuinely needs to steal room from
-    // the crescent -- everywhere else, behavior stays exactly as it was.
-    // (Querying the DOM directly rather than referencing the `cheatSheet`
-    // variable, since that's declared later in the script and this runs
-    // once immediately on page load, before that declaration exists yet.)
-    const cheatSheetOpen = document.getElementById('cheatSheet').classList.contains('open');
-    if(cheatSheetOpen){
-      const neededMinHeight = btnSize * 4;
-      if(fingersContainer.getBoundingClientRect().height < neededMinHeight){
-        fingersContainer.style.minHeight = neededMinHeight + 'px';
-      }
-    } else {
-      fingersContainer.style.minHeight = ''; // back to the CSS default when the cheat sheet isn't the thing competing for space
-    }
-
-    const containerRect = fingersContainer.getBoundingClientRect(); // re-measure -- the min-height above may have just changed it
-
-    // Lean the diagonal's steepness toward whichever dimension the screen actually
-    // has more of — portrait (tall, narrow) gets a steeper sweep so it uses height
-    // instead of fighting a cramped width; landscape gets a shallower one. Blended
-    // with the -35° baseline so it keeps its diagonal character rather than going
-    // fully vertical or horizontal at extreme aspect ratios.
+  // Shared by layoutCrescent() and the cheat-sheet-open logic below, so
+  // there's exactly one implementation of this math, not two copies that
+  // can quietly drift out of sync with each other.
+  function computeCrescentScale(){
+    const btnSize = fingerOrder[0].getBoundingClientRect().width;
+    const containerRect = fingersContainer.getBoundingClientRect();
     const aspectAngle = -Math.atan2(containerRect.height, containerRect.width) * 180 / Math.PI;
     const angleDeg = (aspectAngle * 0.65) + (-35 * 0.35);
     const rad = angleDeg * Math.PI / 180;
-    const dx = Math.cos(rad), dy = Math.sin(rad);   // along the diagonal
-    const px = -dy, py = dx;                        // perpendicular, for the concave bow
-
-    const spacing = btnSize * 1.55;                 // center-to-center along the diagonal — must exceed btnSize or buttons overlap; this was the bug
-    const bow = [btnSize*0.30, -btnSize*0.14, -btnSize*0.14, btnSize*0.30]; // outer fingers bow outward — concave arc
-
+    const dx = Math.cos(rad), dy = Math.sin(rad);
+    const px = -dy, py = dx;
+    const spacing = btnSize * 1.55;
+    const bow = [btnSize*0.30, -btnSize*0.14, -btnSize*0.14, btnSize*0.30];
     const positions = [0,1,2,3].map(i => {
       const t = (i - 1.5) * spacing;
-      const b = bow[i];
-      return { x: t*dx + b*px, y: t*dy + b*py };
+      return { x: t*dx + bow[i]*px, y: t*dy + bow[i]*py };
     });
-
-    // Scale to actually FILL the container (not just avoid overflowing it) —
-    // uses all available left-right and top-bottom space, whichever dimension is the binding one.
-    const xs = positions.map(p => Math.abs(p.x));
-    const ys = positions.map(p => Math.abs(p.y));
-    const maxX = Math.max(...xs) + btnSize/2;
-    const maxY = Math.max(...ys) + btnSize/2;
+    const maxX = Math.max(...positions.map(p => Math.abs(p.x))) + btnSize/2;
+    const maxY = Math.max(...positions.map(p => Math.abs(p.y))) + btnSize/2;
     const scale = Math.min((containerRect.width/2 - 4) / maxX, (containerRect.height/2 - 4) / maxY);
+    return { scale, positions, containerRect };
+  }
 
+  function layoutCrescent(){
+    const { scale, positions } = computeCrescentScale();
     fingerOrder.forEach((el, i) => {
       const p = positions[i];
       // translate(-50%,-50%) self-centers based on the button's actual rendered
@@ -1400,12 +1376,35 @@
     if(!cheatBuilt) buildCheatSheet();
     const isOpen = cheatSheet.classList.toggle('open');
     cheatToggle.textContent = isOpen ? 'Hide cheat sheet' : 'Show cheat sheet';
-    // Explicit safety net alongside the ResizeObserver: an auto-fit grid
-    // (the cheat sheet's own layout) can need an extra frame to settle its
-    // final column count in some browsers, which changes the grid's total
-    // height and therefore how much room .fingers actually has left.
-    // Waiting a frame guarantees we measure the real, settled geometry.
-    requestAnimationFrame(() => requestAnimationFrame(layoutCrescent));
+    // The cheat sheet's own grid can need an extra frame to settle its
+    // final column count in some browsers, which changes how much room
+    // .fingers actually has left -- wait for that before deciding anything.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if(!isOpen){
+        // Closing: give back whatever room was borrowed, no questions asked.
+        fingersContainer.style.minHeight = '';
+        layoutCrescent();
+        return;
+      }
+      // Opening: measure the room actually available now, and only grow if
+      // that's genuinely too little to keep buttons from overlapping.
+      // (The default, cheat-sheet-closed case is deliberately left as-is --
+      // guaranteeing zero overlap there too costs real phone scroll room
+      // this page can't spare; that's a separate, smaller, known gap.)
+      fingersContainer.style.minHeight = '';
+      const MIN_SAFE_SCALE = 0.85; // adjacent buttons start overlapping below roughly 0.65; this leaves real margin beyond that
+      // Growing the container changes its aspect ratio, which changes the
+      // crescent's angle, which changes how much scale actually results --
+      // not a simple linear relationship. Rather than trust one algebraic
+      // guess, re-measure after each step and keep going until the real
+      // result reaches target (bounded, so it can't loop forever).
+      for(let i = 0; i < 6; i++){
+        const { scale, containerRect } = computeCrescentScale();
+        if(scale >= MIN_SAFE_SCALE) break;
+        fingersContainer.style.minHeight = (containerRect.height * (MIN_SAFE_SCALE / scale) * 1.05) + 'px'; // +5% pad against measurement rounding
+      }
+      layoutCrescent();
+    }));
   });
 
   render();
