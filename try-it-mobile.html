@@ -240,6 +240,8 @@
     justify-content:space-between;
     align-items:center;
     margin-top:16px;
+    position:relative;
+    z-index:25; /* stays above a calibrated finger circle (z-index:15), so Speak/Share/Clear can never be covered and made unreachable */
   }
   .hint{
     font-size:11px;
@@ -333,7 +335,6 @@
     font-family:'Space Grotesk', sans-serif;
     font-size:14px;
     color:var(--ink);
-    z-index:5;
     cursor:crosshair;
   }
   .calibrate-overlay.active{ display:flex; }
@@ -341,6 +342,8 @@
     flex:0 0 auto;
     display:block;
     margin:16px auto 0;
+    position:relative;
+    z-index:25; /* same protection as .controls -- Calibrate/Recalibrate must never be coverable by a finger circle, or there'd be no way back */
     font-family:'IBM Plex Mono', monospace;
     font-size:11px;
     letter-spacing:.04em;
@@ -1189,6 +1192,13 @@
       el.style.top = (p.yFrac * 100) + '%';
       el.style.transform = 'translate(-50%, -50%)'; // percentages are true viewport %, since position:fixed's containing block is the viewport
     });
+    // The fingers now live elsewhere on the real screen, fixed-positioned --
+    // the container that used to visually hold them no longer needs to
+    // claim its old flex-grown space, or it just leaves a dead gap where
+    // the crescent used to be.
+    fingersContainer.style.flex = '0 0 0px';
+    fingersContainer.style.minHeight = '0';
+    fingersContainer.style.margin = '0';
     return true;
   }
 
