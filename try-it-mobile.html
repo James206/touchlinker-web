@@ -1105,7 +1105,18 @@
   // opening, help modal, mode-hint text wrapping) -- not just a window
   // resize. A ResizeObserver catches that; a plain resize listener won't.
   if(window.ResizeObserver){
-    new ResizeObserver(() => layoutCrescent()).observe(fingersContainer);
+    // Debounced via requestAnimationFrame: ResizeObserver can fire several
+    // times in quick succession during a complex reflow (like the cheat
+    // sheet's responsive grid settling its column count). Recomputing on
+    // every single firing risks catching .fingers at a transient,
+    // not-yet-settled size and locking in a bad crescent. Waiting for the
+    // next frame after the LAST firing in a burst means we only ever
+    // measure the real, settled size.
+    let rafId = null;
+    new ResizeObserver(() => {
+      if(rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => { rafId = null; layoutCrescent(); });
+    }).observe(fingersContainer);
   }
 
   // ── Screen lock ──────────────────────────────────────────────────
@@ -1373,6 +1384,12 @@
     if(!cheatBuilt) buildCheatSheet();
     const isOpen = cheatSheet.classList.toggle('open');
     cheatToggle.textContent = isOpen ? 'Hide cheat sheet' : 'Show cheat sheet';
+    // Explicit safety net alongside the ResizeObserver: an auto-fit grid
+    // (the cheat sheet's own layout) can need an extra frame to settle its
+    // final column count in some browsers, which changes the grid's total
+    // height and therefore how much room .fingers actually has left.
+    // Waiting a frame guarantees we measure the real, settled geometry.
+    requestAnimationFrame(() => requestAnimationFrame(layoutCrescent));
   });
 
   render();
