@@ -1089,9 +1089,33 @@
     });
   }
 
+  // Ensures .fingers has enough room for a non-overlapping crescent, growing
+  // it (and accepting the resulting scroll) if it doesn't -- used both on
+  // initial load and whenever the cheat sheet's own content competes for
+  // the same space. Confirmed on a real phone that the un-grown default was
+  // producing a severe pileup, not just a minor corner-touch as originally
+  // assumed here -- so this now runs everywhere, not just for the cheat
+  // sheet, on the view that a working crescent with some scroll beats a
+  // broken one with none.
+  function ensureMinSafeScale(){
+    fingersContainer.style.minHeight = '';
+    const MIN_SAFE_SCALE = 0.85; // adjacent buttons start overlapping below roughly 0.65; this leaves real margin beyond that
+    // Growing the container changes its aspect ratio, which changes the
+    // crescent's angle, which changes how much scale actually results --
+    // not a simple linear relationship. Rather than trust one algebraic
+    // guess, re-measure after each step and keep going until the real
+    // result reaches target (bounded, so it can't loop forever).
+    for(let i = 0; i < 6; i++){
+      const { scale, containerRect } = computeCrescentScale();
+      if(scale >= MIN_SAFE_SCALE) break;
+      fingersContainer.style.minHeight = (containerRect.height * (MIN_SAFE_SCALE / scale) * 1.05) + 'px'; // +5% pad against measurement rounding
+    }
+  }
+
+  ensureMinSafeScale();
   layoutCrescent();
-  window.addEventListener('resize', layoutCrescent);
-  window.addEventListener('orientationchange', () => setTimeout(layoutCrescent, 100));
+  window.addEventListener('resize', () => { ensureMinSafeScale(); layoutCrescent(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { ensureMinSafeScale(); layoutCrescent(); }, 100));
   // .fingers is now flex-grown to fill whatever space is left in .surface,
   // so its pixel size can change from content elsewhere (cheat sheet
   // opening, help modal, mode-hint text wrapping) -- not just a window
@@ -1265,6 +1289,7 @@
     fingersContainer.style.flex = '';
     fingersContainer.style.minHeight = '';
     fingersContainer.style.margin = '';
+    ensureMinSafeScale();
     layoutCrescent();
     calibrateBtn.textContent = 'Calibrate to my hand';
     resetCalibrationBtn.style.display = 'none';
@@ -1379,30 +1404,10 @@
     // The cheat sheet's own grid can need an extra frame to settle its
     // final column count in some browsers, which changes how much room
     // .fingers actually has left -- wait for that before deciding anything.
+    // Either way (open or closed), re-run the same shared check -- both
+    // states need a non-overlapping crescent, not just the open one.
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      if(!isOpen){
-        // Closing: give back whatever room was borrowed, no questions asked.
-        fingersContainer.style.minHeight = '';
-        layoutCrescent();
-        return;
-      }
-      // Opening: measure the room actually available now, and only grow if
-      // that's genuinely too little to keep buttons from overlapping.
-      // (The default, cheat-sheet-closed case is deliberately left as-is --
-      // guaranteeing zero overlap there too costs real phone scroll room
-      // this page can't spare; that's a separate, smaller, known gap.)
-      fingersContainer.style.minHeight = '';
-      const MIN_SAFE_SCALE = 0.85; // adjacent buttons start overlapping below roughly 0.65; this leaves real margin beyond that
-      // Growing the container changes its aspect ratio, which changes the
-      // crescent's angle, which changes how much scale actually results --
-      // not a simple linear relationship. Rather than trust one algebraic
-      // guess, re-measure after each step and keep going until the real
-      // result reaches target (bounded, so it can't loop forever).
-      for(let i = 0; i < 6; i++){
-        const { scale, containerRect } = computeCrescentScale();
-        if(scale >= MIN_SAFE_SCALE) break;
-        fingersContainer.style.minHeight = (containerRect.height * (MIN_SAFE_SCALE / scale) * 1.05) + 'px'; // +5% pad against measurement rounding
-      }
+      ensureMinSafeScale();
       layoutCrescent();
     }));
   });
